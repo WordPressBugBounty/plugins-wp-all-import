@@ -4,7 +4,7 @@
  * @param $post
  */
 function pmxi_pmxi_extend_options_custom_fields($post_type, $post) {
-	if ( class_exists('ACF') && ! is_plugin_active('wpai-acf-add-on/wpai-acf-add-on.php') ) {
+	if ( class_exists('ACF') && ! is_plugin_active('wpai-acf-add-on/wpai-acf-add-on.php') && !class_exists('PMAI_Plugin')) {
 
 		global $acf;
 		

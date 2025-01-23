@@ -3746,6 +3746,9 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                 if ( preg_match('%\W(svg)$%i', wp_all_import_basename($image_filepath)) or $file_info = apply_filters('pmxi_getimagesize', @getimagesize($image_filepath), $image_filepath) and in_array($file_info[2], wp_all_import_supported_image_types())) {
                     $downloaded = true;
                     if (preg_match('%\W(svg)$%i', wp_all_import_basename($image_filepath))){
+	                    if ( (is_wp_error($request) or $request === false)) {
+		                    wp_all_import_sanitize_svg( $image_filepath );
+	                    }
                         $file_info = true;
                     }
                     $logger and call_user_func($logger, sprintf(__('- Image `%s` has been successfully downloaded', 'wp_all_import_plugin'), $url));
@@ -3769,7 +3772,9 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 
         $logger and call_user_func($logger, sprintf(__('- Creating an attachment for image `%s`', 'wp_all_import_plugin'), $handle_image['url']));
 
-        $attachment_title = explode(".", $image_name);
+	    empty($handle_image['type']) && $handle_image['type'] = preg_match('%\W(svg)$%i', wp_all_import_basename($handle_image['file'])) ? 'image/svg+xml' : '';
+
+	    $attachment_title = explode(".", $image_name);
         if (is_array($attachment_title) and count($attachment_title) > 1) array_pop($attachment_title);
 
         $attachment = array(

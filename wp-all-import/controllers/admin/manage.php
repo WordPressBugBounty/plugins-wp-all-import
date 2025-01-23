@@ -73,6 +73,10 @@ class PMXI_Admin_Manage extends PMXI_Controller_Admin {
 	* delete all posts, media, files, and whatever value was in the 'Unique ID' field
 	*/
 	public function delete_and_edit() {
+		if( ! wp_verify_nonce( ($_REQUEST['_wpnonce_delete-and-edit'] ?? ''), 'delete-and-edit') )
+		{
+			die( __('Security check', 'wp-all-import-pro') );
+		}
 		$get = $this->input->get(array(
 			'id' => '',
 		));

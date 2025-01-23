@@ -482,3 +482,30 @@ if (!function_exists('wp_all_import_get_product_id_by_sku')) {
         return (int) apply_filters( 'wp_all_import_get_product_id_by_sku', $id, $sku );
     }
 }
+
+if (!function_exists('wp_all_import_supported_image_extensions')) {
+	function wp_all_import_supported_image_extensions() {
+		$types = ['svg']; //
+		$mime_types = get_allowed_mime_types();
+		if ( ! empty($mime_types) ) {
+			foreach ($mime_types as $ext => $mime_type) {
+				if (strpos($mime_type, 'image/') !== FALSE) {
+					$types[] = $ext;
+				}
+			}
+		}
+		return implode("|", apply_filters('pmxi_supported_image_extensions', $types));
+	}
+}
+
+if(!function_exists('pmxi_maybe_unserialize'))
+{
+	function pmxi_maybe_unserialize($value)
+	{
+		if(is_serialized($value)){
+			$value = @unserialize(trim($value), ['allowed_classes' => false]);
+		}
+
+		return $value;
+	}
+}

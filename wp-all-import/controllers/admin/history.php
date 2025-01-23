@@ -99,7 +99,7 @@ class PMXI_Admin_History extends PMXI_Controller_Admin {
 	 */
 	public function delete() {
 
-		if ( ! get_current_user_id() or ! current_user_can( PMXI_Plugin::$capabilities )) {
+		if ( ! get_current_user_id() or ! current_user_can( PMXI_Plugin::$capabilities ) || ! wp_verify_nonce( ($_REQUEST['_wpnonce_delete-history'] ?? ''), 'delete-history' ) ) {
 		    // This nonce is not valid.
 		    die( 'Security check' ); 
 		} else {

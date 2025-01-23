@@ -3,7 +3,7 @@
 Plugin Name: WP All Import
 Plugin URI: https://www.wpallimport.com/wordpress-xml-csv-import/?utm_source=import-plugin-free&utm_medium=wp-plugins-page&utm_campaign=upgrade-to-pro
 Description: The most powerful solution for importing XML and CSV files to WordPress. Create Posts and Pages with content from any XML or CSV file. A paid upgrade to WP All Import Pro is available for support and additional features.
-Version: 3.7.9
+Version: 3.8.0
 Author: Soflyy
 */
 
@@ -25,7 +25,7 @@ define('WP_ALL_IMPORT_ROOT_URL', rtrim(plugin_dir_url(__FILE__), '/'));
  */
 define('WP_ALL_IMPORT_PREFIX', 'pmxi_');
 
-define('PMXI_VERSION', '3.7.9');
+define('PMXI_VERSION', '3.8.0');
 
 define('PMXI_EDITION', 'free');
 
@@ -246,6 +246,7 @@ final class PMXI_Plugin {
 
 		// register autoloading method
 		spl_autoload_register(array($this, 'autoload'));
+        require_once 'vendor/autoload.php';
 
 		// require acc code
 		if (is_dir(self::ROOT_DIR . '/acc')) foreach (PMXI_Helper::safe_glob(self::ROOT_DIR . '/acc/*.php', PMXI_Helper::GLOB_RECURSE | PMXI_Helper::GLOB_PATH) as $filePath) {
@@ -850,7 +851,7 @@ final class PMXI_Plugin {
                         foreach ($imports_list as $import_entry) {
                             $import_id = $import_entry->id;
                             $import = $import->getById($import_id);
-                            $import_options = maybe_unserialize($import->options);
+                            $import_options = pmxi_maybe_unserialize($import->options);
                             $import_type = $import_options['custom_type'];
                             if ( in_array($import_type, array('import_users', 'shop_customer')) ) {
                                 $user_imports[] = $import_id;
@@ -897,7 +898,7 @@ final class PMXI_Plugin {
 				foreach ($imports_list as $import_entry) {
 					$import_id = $import_entry->id;
 					$import = $import->getById($import_id);
-					$import_options = maybe_unserialize($import->options);
+					$import_options = pmxi_maybe_unserialize($import->options);
 					$import_type = $import_options['custom_type'];
 					if ( in_array($import_type, array('import_users', 'shop_customer')) ) {
 						$user_imports[] = $import_id;
@@ -1450,6 +1451,34 @@ final class PMXI_Plugin {
         }
         return $import_id;
     }
+
+	/**
+	 * @param $message
+	 */
+	public function showNoticeAndDisablePlugin($message){
+		$this->showNotice($message);
+		deactivate_plugins( str_replace('\\', '/', dirname(__FILE__)) . '/wp-all-import-pro.php');
+	}
+
+	/**
+	 * @param $message
+	 */
+	public function showNotice($message) {
+		$notice = new \Wpai\WordPress\AdminErrorNotice($message);
+		$notice->render();
+	}
+
+	/**
+	 * @param $message
+	 * @param $noticeId
+	 */
+	public function showDismissibleNotice($message, $noticeId) {
+		$notice = new \Wpai\WordPress\AdminDismissibleNotice($message, $noticeId);
+		if(!$notice->isDismissed()) {
+			$notice->render();
+		}
+	}
+
 
 }
 

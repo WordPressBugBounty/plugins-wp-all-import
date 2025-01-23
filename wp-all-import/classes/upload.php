@@ -82,7 +82,7 @@ if ( ! class_exists('PMXI_Upload')){
 									$decodedTemplates = json_decode($templates, true);
 									$templateOptions = empty($decodedTemplates[0]) ? current($decodedTemplates) : $decodedTemplates;
 									if ( ! empty($templateOptions) and isset($templateOptions[0]['_import_type']) and $templateOptions[0]['_import_type'] == 'url' ) {
-										$options = maybe_unserialize($templateOptions[0]['options']);
+										$options = pmxi_maybe_unserialize($templateOptions[0]['options']);
 										return array(
 											'filePath' => $templateOptions[0]['_import_url'],
 											'bundle' => $bundle,
@@ -259,7 +259,7 @@ if ( ! class_exists('PMXI_Upload')){
 				$templateOptions = empty($decodedTemplates[0]) ? current($decodedTemplates) : $decodedTemplates;
 			}
 
-			$options = (empty($templateOptions[0]['options'])) ? false : maybe_unserialize($templateOptions[0]['options']);
+			$options = (empty($templateOptions[0]['options'])) ? false : pmxi_maybe_unserialize($templateOptions[0]['options']);
 
 			if ( ! empty($options['root_element'])) $this->root_element = $options['root_element'];
 
@@ -545,7 +545,7 @@ if ( ! class_exists('PMXI_Upload')){
 				$templateOptions = empty($decodedTemplates[0]) ? current($decodedTemplates) : $decodedTemplates;
 			}
 
-			$options = (empty($templateOptions[0]['options'])) ? false : maybe_unserialize($templateOptions[0]['options']);
+			$options = (empty($templateOptions[0]['options'])) ? false : pmxi_maybe_unserialize($templateOptions[0]['options']);
 
 			if ( ! empty($options['root_element'])) $this->root_element = $options['root_element'];
 

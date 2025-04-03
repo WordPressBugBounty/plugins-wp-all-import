@@ -1,5 +1,7 @@
 <?php
 
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 class PMXI_XLSParser{
 
 	public $csv_path;	
@@ -29,21 +31,24 @@ class PMXI_XLSParser{
 	}
 
 	protected function toXML(){
+		
+		// Include the PhpSpreadsheet library (autoloaded by Composer)
+		$objSpreadsheet = IOFactory::load($this->_filename);
 
-		include_once( PMXI_Plugin::ROOT_DIR . '/classes/PHPExcel/IOFactory.php' );
+		// Allow filters to modify the Spreadsheet object
+		$objSpreadsheet = apply_filters('wp_all_import_phpexcel_object', $objSpreadsheet, $this->_filename);
 
-		$objPHPExcel = PHPExcel_IOFactory::load($this->_filename);
+		// Set the CSV delimiter; allow filters to modify it
+		$spreadsheetDelimiter = ",";
+		$spreadsheetDelimiter = apply_filters('wp_all_import_phpexcel_delimiter', $spreadsheetDelimiter, $this->_filename);
 
-        $objPHPExcel = apply_filters('wp_all_import_phpexcel_object', $objPHPExcel, $this->_filename);
-
-        $PHPExcelDelimiter = ",";
-        $PHPExcelDelimiter = apply_filters('wp_all_import_phpexcel_delimiter', $PHPExcelDelimiter, $this->_filename);
-
-		$objWriter   = PHPExcel_IOFactory::createWriter($objPHPExcel, 'CSV')->setDelimiter($PHPExcelDelimiter)
-                                                          ->setEnclosure('"')
-                                                          ->setLineEnding("\r\n")
-                                                          ->setSheetIndex(0)
-                                                          ->save($this->csv_path);
+		// Create a CSV writer and set the settings
+		$objWriter = IOFactory::createWriter($objSpreadsheet, 'Csv');
+		$objWriter->setDelimiter($spreadsheetDelimiter)
+		          ->setEnclosure('"')
+		          ->setLineEnding("\r\n")
+		          ->setSheetIndex(0)
+		          ->save($this->csv_path);
 
         include_once(PMXI_Plugin::ROOT_DIR . '/libraries/XmlImportCsvParse.php');
 

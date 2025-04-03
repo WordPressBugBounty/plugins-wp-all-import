@@ -2,7 +2,7 @@
 Contributors: soflyy, wpallimport
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.8.0
+Stable tag: 3.9.0
 Requires PHP: 7.4
 Tags: wordpress csv import, wordpress xml import, xml, csv, datafeed, import, migrate, import csv to wordpress, import xml to wordpress, advanced xml import, advanced csv import, bulk csv import, bulk xml import, bulk data import, xml to custom post type, csv to custom post type, woocommerce csv import, woocommerce xml import, csv import, import csv, xml import, import xml, csv importer
 
@@ -195,6 +195,9 @@ If you are using the free version of the plugin, you can obtain support through 
 4. Manage imports.
 
 == Changelog ==
+
+= 3.9.0 =
+* security improvement: migrated from PHPExcel to PHPSpreadsheet
 
 = 3.8.0 =
 * security improvement, fixes: CVE-2024-8722, CVE-2024-9664, CVE-2024-9661

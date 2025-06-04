@@ -1,8 +1,8 @@
 === Import any XML, CSV or Excel File to WordPress ===
 Contributors: soflyy, wpallimport
 Requires at least: 5.0
-Tested up to: 6.7
-Stable tag: 3.9.1
+Tested up to: 6.8
+Stable tag: 3.9.2
 Requires PHP: 7.4
 Tags: wordpress csv import, wordpress xml import, xml, csv, datafeed, import, migrate, import csv to wordpress, import xml to wordpress, advanced xml import, advanced csv import, bulk csv import, bulk xml import, bulk data import, xml to custom post type, csv to custom post type, woocommerce csv import, woocommerce xml import, csv import, import csv, xml import, import xml, csv importer
 
@@ -195,6 +195,9 @@ If you are using the free version of the plugin, you can obtain support through 
 4. Manage imports.
 
 == Changelog ==
+
+= 3.9.2 =
+* improvement: add partner discounts
 
 = 3.9.1 =
 * bug fix: remove defaults for TEXT db fields

@@ -327,10 +327,11 @@ if (!function_exists('wp_all_import_is_update_custom_field')) {
         ) {
             return TRUE;
         }
-
+		
         return FALSE;
     }
 }
+
 if (!function_exists('wp_all_import_delete_missing_notice')) {
     function wp_all_import_delete_missing_notice( $options ) {
 
@@ -495,6 +496,41 @@ if (!function_exists('wp_all_import_supported_image_extensions')) {
 			}
 		}
 		return implode("|", apply_filters('pmxi_supported_image_extensions', $types));
+	}
+}
+
+if (!function_exists('pmxi_truncate_term_slug')) {
+	function pmxi_truncate_term_slug($string, $limit = 200) {
+		// Function to check if the string is URL-encoded.
+		$is_url_encoded = (urldecode($string) !== $string);
+
+		// Function to truncate URL-encoded strings.
+		if ($is_url_encoded) {
+			$decoded = rawurldecode($string);
+			$encoded_string = '';
+			$encoded_length = 0;
+
+			for ($i = 0; $i < mb_strlen($decoded); $i++) {
+				$char = mb_substr($decoded, $i, 1);
+				$encoded_char = rawurlencode($char);
+				$char_length = strlen($encoded_char);
+
+				if ($encoded_length + $char_length > $limit) {
+					break;
+				}
+
+				$encoded_string .= $encoded_char;
+				$encoded_length += $char_length;
+			}
+
+			return $encoded_string;
+		} else {
+			// Function to truncate regular strings.
+			if (mb_strlen($string) > $limit) {
+				return mb_substr($string, 0, $limit);
+			}
+			return $string;
+		}
 	}
 }
 

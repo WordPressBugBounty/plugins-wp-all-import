@@ -43,10 +43,7 @@
 										<input type="hidden" name="taxonomy_type" value="<?php echo sanitize_key(esc_attr($post['taxonomy_type']));?>">
 										<select id="taxonomy_to_import">
 											<option value=""><?php _e('Select Taxonomy', 'wp_all_export_plugin'); ?></option>
-											<?php $options = wp_all_import_get_taxonomies(); ?>
-											<?php foreach ($options as $slug => $name):?>
-												<option value="<?php echo esc_attr($slug);?>" <?php if ($post['taxonomy_type'] == $slug):?>selected="selected"<?php endif;?>><?php echo esc_html($name);?></option>
-											<?php endforeach;?>
+											<!-- Free version - no taxonomies listed, upgrade required -->
 										</select>
 									</div>
 								<?php else: ?>
@@ -83,9 +80,9 @@
 										// Put users & comments & taxonomies after Pages
 										if ( ! empty($custom_types['page']) && $key == 'page' || empty($custom_types['page']) && $key == 'post' ){
 
-                                            $sorted_cpt['taxonomies'] = new stdClass();
-                                            $sorted_cpt['taxonomies']->labels = new stdClass();
-                                            $sorted_cpt['taxonomies']->labels->name = __('Taxonomies','wp_all_export_plugin');
+	                                            $sorted_cpt['taxonomies'] = new stdClass();
+	                                            $sorted_cpt['taxonomies']->labels = new stdClass();
+	                                            $sorted_cpt['taxonomies']->labels->name = __('Taxonomies','wp_all_export_plugin');
 
 											$sorted_cpt['import_users'] = new stdClass();
 											$sorted_cpt['import_users']->labels = new stdClass();
@@ -191,7 +188,7 @@
 									<?php if ( ! class_exists('PMUI_Plugin') ): ?>
 										<div class="wpallimport-upgrade-notice" rel="import_users">
 											<p><?php _e('The User Add-On is Required to Import Users', 'wp_all_import_plugin'); ?></p>
-											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link"><?php _e('Purchase the User Add-On', 'wp_all_import_plugin');?></a>
+											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link"><?php _e('Purchase the User Add-On', 'wp_all_import_plugin');?></a>
 										</div>
 									<?php endif; ?>
 
@@ -199,7 +196,7 @@
 									<?php if ( class_exists('WooCommerce') && ! class_exists('PMUI_Plugin') ): ?>
 										<div class="wpallimport-upgrade-notice" rel="shop_customer">
 											<p><?php _e('The User Add-On is Required to Import Customers', 'wp_all_import_plugin'); ?></p>
-											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link"><?php _e('Purchase the User Add-On', 'wp_all_import_plugin');?></a>
+											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link"><?php _e('Purchase the User Add-On', 'wp_all_import_plugin');?></a>
 										</div>
 									<?php endif; ?>
 
@@ -207,7 +204,7 @@
 									<?php if ( class_exists('WooCommerce') && ! class_exists('PMWI_Plugin') ): ?>
 										<div class="wpallimport-upgrade-notice" rel="product">
 											<p><?php _e('The WooCommerce Add-On is Required to Import Products', 'wp_all_import_plugin'); ?></p>
-											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-products" target="_blank" class="upgrade_link"><?php _e('Purchase the WooCommerce Add-On', 'wp_all_import_plugin');?></a>
+											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-products" target="_blank" class="upgrade_link"><?php _e('Purchase the WooCommerce Add-On', 'wp_all_import_plugin');?></a>
 										</div>
 									<?php endif; ?>
 									<?php if ( class_exists('WooCommerce') &&  ( ! class_exists('PMWI_Plugin') || class_exists('PMWI_Plugin') && PMWI_EDITION == 'free') ): ?>
@@ -217,7 +214,7 @@
 											<?php else: ?>
 												<p><?php _e('The WooCommerce Add-On is Required to Import Orders', 'wp_all_import_plugin'); ?></p>
 											<?php endif; ?>
-											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-orders" target="_blank" class="upgrade_link"><?php _e('Purchase the WooCommerce Add-On', 'wp_all_import_plugin');?></a>
+											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-orders" target="_blank" class="upgrade_link"><?php _e('Purchase the WooCommerce Add-On', 'wp_all_import_plugin');?></a>
 										</div>
 										<div class="wpallimport-upgrade-notice" rel="shop_coupon">
 											<?php if (class_exists('PMWI_Plugin') && PMWI_EDITION == 'free'): ?>
@@ -225,12 +222,12 @@
 											<?php else: ?>
 												<p><?php _e('The WooCommerce Add-On is Required to Import Coupons', 'wp_all_import_plugin'); ?></p>
 											<?php endif; ?>
-											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-coupons"><?php _e('Purchase the WooCommerce Add-On', 'wp_all_import_plugin');?></a>
+											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-coupons"><?php _e('Purchase the WooCommerce Add-On', 'wp_all_import_plugin');?></a>
 										</div>
 									<?php endif; ?>
 									<div class="wpallimport-upgrade-notice" rel="taxonomies">
 										<p><?php _e('WP All Import Pro is Required to Import Taxonomies', 'wp_all_import_plugin'); ?></p>
-										<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-taxonomies" target="_blank" class="upgrade_link"><?php _e('Purchase WP All Import Pro', 'wp_all_import_plugin');?></a>
+										<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-taxonomies" target="_blank" class="upgrade_link"><?php _e('Purchase WP All Import Pro', 'wp_all_import_plugin');?></a>
 									</div>
 
 								</div>
@@ -287,7 +284,13 @@
 								<?php else : ?>
 									<input type="checkbox" id="xml_reader_engine" class="fix_checkbox" name="xml_reader_engine" value="1" <?php echo $post['xml_reader_engine'] ? 'checked="checked"': '' ?>/>
 									<label for="xml_reader_engine"><?php _e('Use StreamReader instead of XMLReader to parse import file', 'wp_all_import_plugin') ?> <a href="#help" class="wpallimport-help" style="position:relative; top:0;" title="<?php _e('XMLReader is much faster, but has a bug that sometimes prevents certain records from being imported with import files that contain special cases.', 'wp_all_import_plugin'); ?>">?</a></label>
-								<?php endif; ?>																	
+								<?php endif; ?>
+							</div>
+
+							<div class="input">
+								<input type="hidden" name="use_alternative_excel_processing" value="0" />
+								<input type="checkbox" id="use_alternative_excel_processing" name="use_alternative_excel_processing" value="1" class="fix_checkbox" <?php echo $post['use_alternative_excel_processing'] ? 'checked="checked"': '' ?>/>
+								<label for="use_alternative_excel_processing"><?php _e('Use alternative Excel processing method', 'wp_all_import_plugin') ?> <a href="#help" class="wpallimport-help" style="position:relative; top:0;" title="<?php _e('Enable this option if you experience memory issues or errors when importing Excel files. This uses a different processing method that can handle problematic Excel files.', 'wp_all_import_plugin'); ?>">?</a></label>
 							</div>
 							
 							<div class="input" style="margin-top: 15px;">

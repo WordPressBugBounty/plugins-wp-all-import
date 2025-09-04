@@ -112,6 +112,10 @@
 		});
 		
 	});
-	
-})(jQuery);	
+
+})(jQuery);
 </script>
+
+<div class="wpallimport-display-columns wpallimport-margin-top-forty">
+	<?php echo apply_filters('wpallimport_footer', ''); ?>
+</div>

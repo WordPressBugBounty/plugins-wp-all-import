@@ -81,7 +81,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 
 		// step #3: template
 		$xpath = new DOMXPath($dom);
-		$this->data['elements'] = $elements = @$xpath->query(PMXI_Plugin::$session->xpath);
+		$this->data['elements'] = $elements = @$xpath->query(PMXI_Plugin::$session->xpath ?? '');
 
 		if ('preview' == $action or 'tag' == $action or 'preview_images' == $action or 'preview_taxonomies' == $action or 'preview_images' == $action) return true;
 
@@ -252,19 +252,8 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
                 }
                 $source['type'] = 'ftp';
             } elseif ('file' == $this->input->post('type')) {
-
-				$uploader = new PMXI_Upload($post['file'], $this->errors);
-				$upload_result = $uploader->file();
-				if ($upload_result instanceof WP_Error) {
-					$this->errors = $upload_result;
-				} else {
-					$source    = $upload_result['source'];
-					$filePath  = $upload_result['filePath'];
-					$post['template'] = $upload_result['template'];
-					PMXI_Plugin::$is_csv = $upload_result['is_csv'];
-					if ( ! empty($upload_result['root_element']))
-						$post['root_element'] = $upload_result['root_element'];
-				}
+				// Free version - existing file selection is not supported
+				$this->errors->add('form-validation', __('Using existing files is not supported in the free edition. Please upgrade to Pro to use this feature.', 'wp_all_import_plugin'));
 			}
 
 			if ($this->input->post('is_submitted') and '' == $this->input->post('custom_type')) {
@@ -273,8 +262,9 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 			if ($post['is_update_previous'] and empty($post['update_previous'])) {
 				$this->errors->add('form-validation', __('Previous import for update must be selected to proceed with a new one', 'wp_all_import_plugin'));
 			}
-			if ( 'taxonomies' == $this->input->post('custom_type') and '' == $this->input->post('taxonomy_type')){
-                $this->errors->add('form-validation', __('Select a taxonomy to import the data', 'wp_all_import_plugin'));
+			if ( 'taxonomies' == $this->input->post('custom_type') ){
+				// Free version - taxonomy imports are not supported
+				$this->errors->add('form-validation', __('Importing taxonomies is not supported in the free edition. Please upgrade to Pro to use this feature.', 'wp_all_import_plugin'));
             }
 			$this->data['detection_feed_extension'] = false;
 			$elements_cloud = array();
@@ -406,12 +396,35 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 				// apply options from WP All Export bundle
 				if ( ! empty($post['template'])) {
 					$templates = json_decode($post['template'], true);
-					$template_options = pmxi_maybe_unserialize($templates[0]['options']);
+					$template_options = \pmxi_maybe_unserialize($templates[0]['options']);
+
+					// Use the custom_type from the template if it exists and the form submission is the default 'post'
+					// This handles the case where bundle skip flow submits before AJAX completes
+					if (!empty($template_options['custom_type']) && $post['custom_type'] == 'post') {
+						$post['custom_type'] = $template_options['custom_type'];
+					}
+
 					$template_options['type'] 	     = ($post['custom_type'] == 'page') ? 'page' : 'post';
 					$template_options['custom_type'] = $post['custom_type'];
 					$template_options['wizard_type'] = $post['wizard_type'];
 					if ($post['wizard_type'] == 'new') {
 						$template_options['create_new_records'] = 1;
+					}
+					// Ensure duplicate_matching is set correctly based on wizard_type for WP All Export bundle
+					if ($post['wizard_type'] == 'new') {
+						// For new items, use auto matching (unique identifier)
+						$template_options['duplicate_matching'] = 'auto';
+					} elseif ($post['wizard_type'] == 'matching') {
+						// For existing items, use manual matching (title, custom field, etc.)
+						$template_options['duplicate_matching'] = 'manual';
+
+						// For product imports, default to SKU matching if custom field is selected but not configured
+						if ($post['custom_type'] == 'product' &&
+							isset($post['duplicate_indicator']) && $post['duplicate_indicator'] == 'custom field' &&
+							(empty($post['custom_duplicate_name']) || empty($post['custom_duplicate_value']))) {
+							$template_options['duplicate_indicator'] = 'custom field';
+							$template_options['custom_duplicate_name'] = '_sku';
+						}
 					}
 					$this->data['post'] = $template_options;
 					PMXI_Plugin::$session->set('options', $template_options);
@@ -769,6 +782,13 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 			$local_paths = ( ! empty(PMXI_Plugin::$session->local_paths) ) ? PMXI_Plugin::$session->local_paths : array(PMXI_Plugin::$session->filePath);
 			PMXI_Plugin::$session->set('local_paths', $local_paths);
 			$loop = 0;
+			$xpath_value = $this->input->getpost('xpath', PMXI_Plugin::$session->xpath);
+			if ($xpath_value !== PMXI_Plugin::$session->xpath) {
+				$this->data['tagno'] = 1;
+				PMXI_Plugin::$session->set('xpath', $xpath_value);
+				PMXI_Plugin::$session->save_data();
+			}
+			$this->data['node_list_count'] = $this->data['tagno'] == 1 ? 0 : PMXI_Plugin::$session->count;
 			foreach ($local_paths as $key => $path) {
 				if (@file_exists($path)){
 					$file = new PMXI_Chunk($path, array(
@@ -785,11 +805,21 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 							$dom->loadXML($xml);
 							libxml_use_internal_errors($old);
 							$xpath = new DOMXPath($dom);
-							if (($elements = @$xpath->query(PMXI_Plugin::$session->xpath)) and $elements->length){
-								$this->data['elements'] = $elements;
+							if (($elements = @$xpath->query($xpath_value)) and $elements->length){
+
+								if ( $this->data['tagno'] == 1 ){
+									$this->data['node_list_count'] += $elements->length;
+									PMXI_Plugin::$session->set('count', $this->data['node_list_count']);
+									if (!$loop) $this->data['dom'] = $dom;
+								}
+
 								$loop += $elements->length;
 
-								if ($loop == $this->data['tagno'] or $loop == PMXI_Plugin::$session->count){
+								if ($loop == $this->data['tagno']) {
+									$this->data['elements'] = $elements;
+								}
+
+								if ( $this->data['tagno'] > 1 and ($loop == $this->data['tagno'] or $loop == PMXI_Plugin::$session->count)) {
 									/* Merge nested XML/CSV files */
 									/*$nested_files = json_decode(PMXI_Plugin::$session->options['nested_files'], true);
 									if ( ! empty($nested_files) ){
@@ -942,7 +972,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 			try {
 				if (empty($xml)){
 					$this->errors->add('form-validation', __('WP All Import lost track of where you are.<br/><br/>Maybe you cleared your cookies or maybe it is just a temporary issue on your web host\'s end.', 'wp_all_import_plugin'));
-				} elseif (empty($post['content'])) {
+				} elseif (empty($post['content']) && wp_all_import_is_title_required(PMXI_Plugin::$session->options['custom_type'])) {
 					$this->errors->add('form-validation', __('<strong>Warning</strong>: your content is blank.', 'wp_all_import_plugin'));
 					$this->data['content'] = "";
 				} else {
@@ -1402,9 +1432,29 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 
 			$DefaultOptions = (isset(PMXI_Plugin::$session->options)) ? array_replace_recursive($default, PMXI_Plugin::$session->options) : $default;
 
+			// Apply WooCommerce product defaults after session merge if values are still empty
+			if ($DefaultOptions['custom_type'] == "product" and class_exists('PMWI_Plugin')) {
+				if (empty($DefaultOptions['duplicate_indicator'])) {
+					$DefaultOptions['duplicate_indicator'] = 'custom field';
+				}
+				if (empty($DefaultOptions['custom_duplicate_name'])) {
+					$DefaultOptions['custom_duplicate_name'] = '_sku';
+				}
+			}
+
+			// Apply alternative Excel processing setting from session if available
+			if (PMXI_Plugin::$session->get('use_alternative_excel_processing')) {
+				$DefaultOptions['use_alternative_excel_processing'] = 1;
+			}
+
+			$DefaultOptions['xpath'] = '';
+
 			$post = $this->input->post( apply_filters('pmxi_options_options', $DefaultOptions, $this->isWizard) );
 
 		} else {
+			$this->data['dom'] = new DOMDocument('1.0', 'UTF-8');
+			$this->data['is_csv'] = PMXI_Plugin::$session->is_csv;
+
 			$this->data['source_type'] = $this->data['import']->type;
 			foreach (PMXI_Admin_Addons::get_active_addons() as $class) {
 				if (class_exists($class)) $default += call_user_func(array($class, "get_default_import_options"));
@@ -1418,6 +1468,14 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 			);
 			PMXI_Plugin::$session->set('source', $source);
 			$post = $this->input->post( apply_filters('pmxi_options_options', $DefaultOptions, $this->isWizard) );
+			$post['xpath'] = $this->data['import']->xpath;
+
+			$xml = $this->get_xml();
+			if ( ! empty($xml) ) {
+				@$this->data['dom']->loadXML($xml);
+				$xpath = new DOMXPath($this->data['dom']);
+				$this->data['elements'] = $elements = $xpath->query($post['xpath']);
+			}
 		}
 
 		$max_input_vars = @ini_get('max_input_vars');
@@ -1505,21 +1563,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 					}
 				}
 
-				// remove entires where both custom_name and custom_value are empty
-				$not_empty = array_flip(array_values(array_merge(array_keys(array_filter($post['custom_name'], 'strlen')), array_keys(array_filter($post['custom_value'], 'strlen')))));
-
-				$post['custom_name'] = array_intersect_key($post['custom_name'], $not_empty);
-				$post['custom_value'] = array_intersect_key($post['custom_value'], $not_empty);
-
-				// validate
-                foreach ($post['custom_name'] as $custom_name) {
-                    $this->_validate_template($custom_name, __('Custom Field Name', 'wp_all_import_plugin'));
-                }
-                foreach ($post['custom_value'] as $key => $custom_value) {
-                    if ( empty($post['custom_format'][$key]) ) {
-                        $this->_validate_template($custom_value, __('Custom Field Value', 'wp_all_import_plugin'));
-                    }
-                }
+				// Custom fields are only available in Pro version
 
 				if ( $post['type'] == "post" and $post['custom_type'] == "product" and class_exists('PMWI_Plugin')){
 					// remove entires where both custom_name and custom_value are empty
@@ -1652,17 +1696,8 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
                 }
                 break;
             case 'taxonomies':
-                // Get All meta keys in the system
+                // Free version - taxonomy imports are not supported
                 $this->data['meta_keys'] = array();
-                $meta_keys = new PMXI_Model_List();
-                $meta_keys->setTable(PMXI_Plugin::getInstance()->getWPPrefix() . 'termmeta');
-                $meta_keys->setColumns('meta_id', 'meta_key')->getBy(NULL, "meta_id", NULL, NULL, "meta_key");
-                $hide_fields = array();
-                if ( ! empty($meta_keys) and $meta_keys->count() ){
-                    foreach ($meta_keys as $meta_key) { if (in_array($meta_key['meta_key'], $hide_fields)) continue;
-                        $this->data['meta_keys'][] = $meta_key['meta_key'];
-                    }
-                }
                 break;
             case 'woo_reviews':
             case 'comments':
@@ -1715,7 +1750,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
                 $this->data['existing_attributes'] = array();
                 if ( ! empty($existing_attributes)){
                     foreach ($existing_attributes as $key => $existing_attribute) {
-                        $existing_attribute = pmxi_maybe_unserialize($existing_attribute->meta_value);
+                        $existing_attribute = \pmxi_maybe_unserialize($existing_attribute->meta_value);
                         if (!empty($existing_attribute) and is_array($existing_attribute)):
                             foreach ($existing_attribute as $key => $value) {
                                 if (strpos($key, "pa_") === false and ! in_array($key, $this->data['existing_attributes'])) $this->data['existing_attributes'][] = $key;
@@ -1734,6 +1769,8 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 		add_thickbox();
 		wp_enqueue_script('media-upload');
 		wp_enqueue_script('quicktags');
+
+
 
 		$this->render();
 	}
@@ -1868,7 +1905,9 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 			if ( @file_exists($functions) && PMXI_Plugin::$is_php_allowed)
 				require_once $functions;
 
-            if ( 'manual' == $post['duplicate_matching'] && ! empty($post['is_delete_missing']) ) {
+
+            // Block delete missing entirely for existing items (duplicate_matching != 'auto')
+            if ( 'auto' != $post['duplicate_matching'] && ! empty($post['is_delete_missing']) ) {
                 $this->errors->add('delete-missing-validation', __('Selected options are not supported in free edition.', 'wp_all_import_plugin'));
             }
 
@@ -1995,11 +2034,8 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 
 						break;
 					case 'file':
-						$filePath = $this->input->post('file');
-						if ($this->data['import']['path'] != $filePath){
-							$uploader = new PMXI_Upload($filePath, $this->errors);
-							$upload_result = $uploader->file();
-						}
+						// Free version - existing file selection is not supported
+						$this->errors->add('form-validation', __('Using existing files is not supported in the free edition. Please upgrade to Pro to use this feature.', 'wp_all_import_plugin'));
 						break;
                     case 'ftp':
                         $filePath = $this->data['import']['path'];
@@ -2200,13 +2236,8 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 							);
 							break;
 						case 'file':
-							$wp_uploads = wp_upload_dir();
-							$filePath = $this->input->post('file');
-							$source = array(
-								'name' => basename($filePath),
-								'type' => 'file',
-								'path' => $wp_uploads['basedir'] . DIRECTORY_SEPARATOR . PMXI_Plugin::FILES_DIRECTORY . DIRECTORY_SEPARATOR . $filePath,
-							);
+							// Free version - existing file selection is not supported
+							$this->errors->add('form-validation', __('Using existing files is not supported in the free edition. Please upgrade to Pro to use this feature.', 'wp_all_import_plugin'));
 							break;
 						case 'ftp':
 							$filePath = empty($upload_result) ? $filePath : $upload_result['filePath'];
@@ -2281,17 +2312,8 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
                 }
                 break;
             case 'taxonomies':
-                // Get All meta keys in the system
-                $this->data['meta_keys'] = array();
-                $meta_keys = new PMXI_Model_List();
-                $meta_keys->setTable(PMXI_Plugin::getInstance()->getWPPrefix() . 'termmeta');
-                $meta_keys->setColumns('meta_id', 'meta_key')->getBy(NULL, "meta_id", NULL, NULL, "meta_key");
-                $hide_fields = array();
-                if ( ! empty($meta_keys) and $meta_keys->count() ){
-                    foreach ($meta_keys as $meta_key) { if (in_array($meta_key['meta_key'], $hide_fields)) continue;
-                        $this->data['existing_meta_keys'][] = $meta_key['meta_key'];
-                    }
-                }
+                // Free version - taxonomy imports are not supported
+                $this->data['existing_meta_keys'] = array();
                 break;
             case 'comments':
             case 'woo_reviews':
@@ -2336,7 +2358,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
                 $this->data['existing_attributes'] = array();
                 if ( ! empty($existing_attributes)){
                     foreach ($existing_attributes as $key => $existing_attribute) {
-                        $existing_attribute = pmxi_maybe_unserialize($existing_attribute->meta_value);
+                        $existing_attribute = \pmxi_maybe_unserialize($existing_attribute->meta_value);
                         if (!empty($existing_attribute) and is_array($existing_attribute)):
                             foreach ($existing_attribute as $key => $value) {
                                 if (strpos($key, "pa_") === false and ! in_array($key, $this->data['existing_attributes'])) $this->data['existing_attributes'][] = $key;

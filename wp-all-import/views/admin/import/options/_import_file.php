@@ -105,7 +105,7 @@
 									<?php printf(__('Files uploaded to <strong>%s</strong> will appear in this list.', 'wp_all_import_plugin'), esc_attr($upload_dir['basedir'] . '/wpallimport/files')); ?>
 								</div>
 								<div class="wpallimport-free-edition-notice">									
-									<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=error&utm_campaign=use-existing-file" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to Use Existing Files', 'wp_all_import_plugin');?></a>
+									<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=error&utm_campaign=use-existing-file" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to Use Existing Files', 'wp_all_import_plugin');?></a>
 									<p style="margin-top:16px;"><?php _e('If you already own it, remove the free edition and install the Pro edition.', 'wp_all_import_plugin'); ?></p>
 								</div>
 							</div>
@@ -118,7 +118,7 @@
                                     <!--a href="javascript:void(0);" class="wpallimport-download-from-url"><?php _e('Upload', 'wp_all_import_plugin'); ?></a-->
                                 </div>
                                 <div class="wpallimport-free-edition-notice">
-                                    <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=download-from-url" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to Download from URL', 'wp_all_import_plugin');?></a>
+                                    <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=download-from-url" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to Download from URL', 'wp_all_import_plugin');?></a>
                                     <p style="margin-top:16px;"><?php _e('If you already own it, remove the free edition and install the Pro edition.', 'wp_all_import_plugin'); ?></p>
                                 </div>
                                 <input type="hidden" name="downloaded"/>
@@ -190,7 +190,7 @@
                                 </div>
 
                                 <div class="wpallimport-free-edition-notice">
-                                    <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=download-from-url" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to Download from FTP/SFTP', 'wp_all_import_plugin');?></a>
+                                    <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=download-from-url" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to Download from FTP/SFTP', 'wp_all_import_plugin');?></a>
                                     <p style="margin-top:16px;"><?php _e('If you already own it, remove the free edition and install the Pro edition.', 'wp_all_import_plugin'); ?></p>
                                 </div>
                             </div>

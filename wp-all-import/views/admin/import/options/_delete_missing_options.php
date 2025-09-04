@@ -17,12 +17,10 @@
     <label for="is_delete_missing"><?php printf(__('Remove or modify %s that are not present in this import file', 'wp_all_import_plugin'), $cpt_name) ?></label><a href="https://www.youtube.com/watch?v=djC1IvYtDDY&ab_channel=WPAllImport" target="_blank" class="video-embed" style="position: relative; top: -2px;"></a>
 </div>
 <div class="switcher-target-is_delete_missing" style="padding-left:17px;">
-    <?php if ($post['wizard_type'] == 'matching'): ?>
-        <div class="wpallimport-free-edition-notice delete-missing-existing-items" style="margin-top: 10px; display: none;">
-            <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&amp;download_id=5839966&amp;edd_options%5Bprice_id%5D=1&amp;utm_source=import-plugin-free&amp;utm_medium=upgrade-notice&amp;utm_campaign=download-from-url" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to use this option', 'wp_all_import_plugin'); ?></a>
-            <p style="margin-top:16px;"><?php _e('If you already own it, remove the free edition and install the Pro edition.', 'wp_all_import_plugin'); ?></p>
-        </div>
-    <?php endif; ?>
+    <div class="wpallimport-free-edition-notice delete-missing-existing-items" style="margin-top: 10px; display: none;">
+        <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&amp;download_id=5839966&amp;edd_options%5Bprice_id%5D=1&amp;utm_source=import-plugin-free&amp;utm_medium=upgrade-notice&amp;utm_campaign=download-from-url" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to use this option', 'wp_all_import_plugin'); ?></a>
+        <p style="margin-top:16px;"><?php _e('If you already own it, remove the free edition and install the Pro edition.', 'wp_all_import_plugin'); ?></p>
+    </div>
     <h4><?php printf(__('Which %s do you want to remove or modify?', 'wp_all_import_plugin'), $cpt_name); ?></h4>
     <input type="radio" id="delete_missing_logic_import" name="delete_missing_logic" value="import" <?php echo 'all' != $post['delete_missing_logic'] ? 'checked="checked"': '' ?> <?php echo ($post['wizard_type'] == 'matching') ? 'disabled="disabled"' : '';?> class="switcher"/>
     <label for="delete_missing_logic_import"><?php printf(__('Remove or modify %s created or updated by this import and then later removed from this import file', 'wp_all_import_plugin' ), $cpt_name);?></label><br>
@@ -47,7 +45,7 @@
             <?php if ( !in_array('is_send_removed_to_trash', $hidden_delete_missing_options) ): ?>
                 <div class="input">
                     <input type="hidden" name="is_send_removed_to_trash" value="0" />
-                    <input type="checkbox" id="is_send_removed_to_trash" name="is_send_removed_to_trash" value="1" <?php echo $post['is_send_removed_to_trash'] && !in_array('is_send_removed_to_trash', $disabled_delete_missing_options) ? 'checked="checked"': '' ?> <?php echo in_array('is_send_removed_to_trash', $disabled_delete_missing_options) ? 'disabled="disabled' : '';?> <?php echo ($post['wizard_type'] == 'matching') ? 'disabled="disabled"' : '';?> class="switcher"/>
+                    <input type="checkbox" id="is_send_removed_to_trash" name="is_send_removed_to_trash" value="1" <?php echo in_array('is_send_removed_to_trash', $disabled_delete_missing_options) ? 'disabled="disabled' : '';?> <?php echo ($post['wizard_type'] == 'matching') ? 'disabled="disabled"' : '';?> class="switcher"/>
                     <?php if ( $post_type == 'product' ): ?>
                         <label for="is_send_removed_to_trash"><?php printf(__('Send removed %s to trash', 'wp_all_import_plugin'), $cpt_name); ?></label>
                         <a href="#help" class="wpallimport-help" title="<?php _e('Removed parent products will have all of their variations moved to the trash with them. If variations are removed from the import file and their parent product isn\'t, the variations will be disabled but will not be present in the trash. You can edit these disabled product variations in WooCommerce to manually reenable them.', 'wp_all_import_plugin') ?>" style="top: -2px;">?</a>

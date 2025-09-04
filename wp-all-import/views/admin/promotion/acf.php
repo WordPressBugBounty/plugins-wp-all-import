@@ -6,7 +6,7 @@
 		<div class="wpallimport-collapsed-content" style="padding: 0;">
 			<div class="wpallimport-collapsed-content-inner">
                 <div class="wpallimport-free-edition-notice" style="text-align:center; margin-top:0; margin-bottom: 40px;">
-                    <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839965&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-acf" target="_blank" class="upgrade_link"><?php _e('ACF Import Add-On required to Import Advanced Custom Fields', 'pmxi_plugin');?></a>
+                    <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839965&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-acf" target="_blank" class="upgrade_link"><?php _e('ACF Import Add-On required to Import Advanced Custom Fields', 'pmxi_plugin');?></a>
                 </div>
 				<table class="form-table" style="max-width:none;">
 					<tr>

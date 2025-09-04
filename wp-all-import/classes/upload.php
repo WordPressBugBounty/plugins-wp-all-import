@@ -23,15 +23,10 @@ if ( ! class_exists('PMXI_Upload')){
 			if (empty($import_id)) {
 				$import_id = $input->get('import_id');
 			}
-            // Get import ID from CLI arguments.
-            if (empty($import_id) && PMXI_Plugin::getInstance()->isCli()) {
-                global $argv;
-                foreach ($argv as $key => $arg) {
-                    if ($arg === 'run' && !empty($argv[$key + 1])) {
-                        $import_id = $argv[$key + 1];
-                    }
-                }
-            }
+			// Get import ID from CLI arguments.
+			if ( empty( $import_id ) && PMXI_Plugin::getInstance()->isCli() ) {
+				$import_id = wp_all_import_get_import_id();
+			}
 			if ( $uploads['error'] ) {
                 $this->uploadsPath = false;
             } else {
@@ -82,7 +77,7 @@ if ( ! class_exists('PMXI_Upload')){
 									$decodedTemplates = json_decode($templates, true);
 									$templateOptions = empty($decodedTemplates[0]) ? current($decodedTemplates) : $decodedTemplates;
 									if ( ! empty($templateOptions) and isset($templateOptions[0]['_import_type']) and $templateOptions[0]['_import_type'] == 'url' ) {
-										$options = pmxi_maybe_unserialize($templateOptions[0]['options']);
+										$options = \pmxi_maybe_unserialize($templateOptions[0]['options']);
 										return array(
 											'filePath' => $templateOptions[0]['_import_url'],
 											'bundle' => $bundle,
@@ -259,7 +254,7 @@ if ( ! class_exists('PMXI_Upload')){
 				$templateOptions = empty($decodedTemplates[0]) ? current($decodedTemplates) : $decodedTemplates;
 			}
 
-			$options = (empty($templateOptions[0]['options'])) ? false : pmxi_maybe_unserialize($templateOptions[0]['options']);
+			$options = (empty($templateOptions[0]['options'])) ? false : \pmxi_maybe_unserialize($templateOptions[0]['options']);
 
 			if ( ! empty($options['root_element'])) $this->root_element = $options['root_element'];
 
@@ -545,7 +540,7 @@ if ( ! class_exists('PMXI_Upload')){
 				$templateOptions = empty($decodedTemplates[0]) ? current($decodedTemplates) : $decodedTemplates;
 			}
 
-			$options = (empty($templateOptions[0]['options'])) ? false : pmxi_maybe_unserialize($templateOptions[0]['options']);
+			$options = (empty($templateOptions[0]['options'])) ? false : \pmxi_maybe_unserialize($templateOptions[0]['options']);
 
 			if ( ! empty($options['root_element'])) $this->root_element = $options['root_element'];
 

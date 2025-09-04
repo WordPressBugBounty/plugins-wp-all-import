@@ -157,6 +157,7 @@
 					<?php endif; ?>
 				</div>
 			</div>
+
 			<div class="input">
 				<input type="hidden" name="custom_fields_list" value="0" />
 				<input type="hidden" name="is_update_custom_fields" value="0" />
@@ -186,6 +187,7 @@
 					</div>
 				</div>
 			</div>
+
 			<div class="input">
 				<input type="hidden" name="taxonomies_list" value="0" />
 				<input type="hidden" name="is_update_categories" value="0" />

@@ -114,7 +114,7 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 										$templateOptions = $templates_data[0]['options'];
 									}
 									else{
-										$templateOptions = empty($templates_data[0]['options']) ? false : pmxi_maybe_unserialize($templates_data[0]['options']);
+										$templateOptions = empty($templates_data[0]['options']) ? false : \pmxi_maybe_unserialize($templates_data[0]['options']);
 									}
 									if ( empty($templateOptions) ){
 										$this->errors->add('form-validation', __('The template is invalid. Options are missing.', 'wp_all_import_plugin'));
@@ -615,9 +615,21 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 
 			$errors = new WP_Error;
 
-			$uploader = new PMXI_Upload($filePath, $errors, rtrim(str_replace(basename($filePath), '', $filePath), '/'));			
-			
-			$upload_result = $uploader->upload();			
+			// Check if alternative Excel processing is requested
+			if (!empty($_POST['use_alternative_excel']) && $_POST['use_alternative_excel'] === '1') {
+				global $wp_all_import_force_alternative_excel;
+				$wp_all_import_force_alternative_excel = true;
+
+				// Store in session for later use when import is created
+				if (!empty(PMXI_Plugin::$session)) {
+					PMXI_Plugin::$session->set('use_alternative_excel_processing', true);
+					PMXI_Plugin::$session->save_data();
+				}
+			}
+
+			$uploader = new PMXI_Upload($filePath, $errors, rtrim(str_replace(basename($filePath), '', $filePath), '/'));
+
+			$upload_result = $uploader->upload();
 			
 			if ($upload_result instanceof WP_Error){
 				$errors = $upload_result;
@@ -659,13 +671,13 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 							}
 
 							if ( $is_show_cf_notice && $is_show_images_notice ){
-								$warning = __('<a class="upgrade_link" target="_blank" href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=images">Upgrade to the Pro edition of WP All Import to Import Images and Custom Fields</a> <p>If you already own it, remove the free edition and install the Pro edition.</p>', 'wp_all_import_plugin');
+								$warning = __('<a class="upgrade_link" target="_blank" href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=images">Upgrade to the Pro edition of WP All Import to Import Images and Custom Fields</a> <p>If you already own it, remove the free edition and install the Pro edition.</p>', 'wp_all_import_plugin');
 							}
 							else if ( $is_show_cf_notice ){
-								$warning = __('<a class="upgrade_link" target="_blank" href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=custom-fields">Upgrade to the Pro edition of WP All Import to Import Custom Fields</a> <p>If you already own it, remove the free edition and install the Pro edition.</p>', 'wp_all_import_plugin');
+								$warning = __('<a class="upgrade_link" target="_blank" href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=custom-fields">Upgrade to the Pro edition of WP All Import to Import Custom Fields</a> <p>If you already own it, remove the free edition and install the Pro edition.</p>', 'wp_all_import_plugin');
 							}
 							else if ( $is_show_images_notice ) {		
-								$warning = __('<a class="upgrade_link" target="_blank" href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=images">Upgrade to the Pro edition of WP All Import to Import Images</a> <p>If you already own it, remove the free edition and install the Pro edition.</p>', 'wp_all_import_plugin');
+								$warning = __('<a class="upgrade_link" target="_blank" href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=images">Upgrade to the Pro edition of WP All Import to Import Images</a> <p>If you already own it, remove the free edition and install the Pro edition.</p>', 'wp_all_import_plugin');
 							}
 						}						
 					}					
@@ -681,12 +693,12 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 
 								if ( ! defined('PMWI_EDITION') ) {
 
-									$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the Pro version of the WooCommerce Add-On.</p><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-bundle" class="upgrade_link" target="_blank">Purchase the WooCommerce Add-On</a>', 'wp_all_import_plugin');
+									$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the Pro version of the WooCommerce Add-On.</p><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-bundle" class="upgrade_link" target="_blank">Purchase the WooCommerce Add-On</a>', 'wp_all_import_plugin');
 
 								}
 								elseif ( PMWI_EDITION != 'paid' ) {
 
-									$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the Pro version of the WooCommerce Add-On, but you have the free version installed.</p><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-bundle" target="_blank" class="upgrade_link">Purchase the WooCommerce Add-On</a>', 'wp_all_import_plugin');
+									$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the Pro version of the WooCommerce Add-On, but you have the free version installed.</p><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-bundle" target="_blank" class="upgrade_link">Purchase the WooCommerce Add-On</a>', 'wp_all_import_plugin');
 
 								}							
 							}
@@ -696,7 +708,7 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 						case 'import_users':
 
 							if ( ! class_exists('PMUI_Plugin') ) {
-								$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the User Add-On.</p><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link">Purchase the User Add-On</a>.', 'wp_all_import_plugin');
+								$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the User Add-On.</p><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link">Purchase the User Add-On</a>.', 'wp_all_import_plugin');
 							}
 
 							break;
@@ -708,7 +720,7 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 								$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires WooCommerce.</p><a class="upgrade_link" href="https://wordpress.org/plugins/woocommerce/" target="_blank">Get WooCommerce</a>.', 'wp_all_import_plugin');
 							}
 							elseif ( ! class_exists('PMUI_Plugin') ) {
-								$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the User Add-On.</p><p class="wpallimport-upgrade-links-container"><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link">Purchase the User Add-On</a></p>', 'wp_all_import_plugin');
+								$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the User Add-On.</p><p class="wpallimport-upgrade-links-container"><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link">Purchase the User Add-On</a></p>', 'wp_all_import_plugin');
 							}
 
 							break;

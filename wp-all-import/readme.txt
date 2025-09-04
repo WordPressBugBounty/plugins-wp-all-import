@@ -2,7 +2,7 @@
 Contributors: soflyy, wpallimport
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 3.9.2
+Stable tag: 3.9.3
 Requires PHP: 7.4
 Tags: wordpress csv import, wordpress xml import, xml, csv, datafeed, import, migrate, import csv to wordpress, import xml to wordpress, advanced xml import, advanced csv import, bulk csv import, bulk xml import, bulk data import, xml to custom post type, csv to custom post type, woocommerce csv import, woocommerce xml import, csv import, import csv, xml import, import xml, csv importer
 
@@ -89,7 +89,7 @@ A [developer API](http://www.wpallimport.com/documentation/developers/action-ref
 
 == Premium Support ==
 
-You can submit the [support form on our website](https://www.wpallimport.com/support/) or email us at [support@wpallimport.com](mailto:support@wpallimport.com). While we try to assist users of our free version, please note that support is not guaranteed and will depend on our capacity. For premium support, purchase [WP All Import Pro](https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=readme&utm_campaign=premium-support).
+You can submit the [support form on our website](https://www.wpallimport.com/support/) or email us at [support@wpallimport.com](mailto:support@wpallimport.com). While we try to assist users of our free version, please note that support is not guaranteed and will depend on our capacity. For premium support, purchase [WP All Import Pro](https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=readme&utm_campaign=premium-support).
 
 == Import To WooCommerce ==
 
@@ -195,6 +195,13 @@ If you are using the free version of the plugin, you can obtain support through 
 4. Manage imports.
 
 == Changelog ==
+
+= 3.9.3 =
+* improvement: streamlined UI for new/existing items import types
+* improvement: enhanced session data handling
+* improvement: enhanced Excel file processing with better error handling and automatic fallback methods
+* improvement: added term slug truncation to prevent database issues with long slugs
+* improvement: UI updates
 
 = 3.9.2 =
 * improvement: add partner discounts

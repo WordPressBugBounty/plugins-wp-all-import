@@ -411,11 +411,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 		                                                        case 'gf_entries':
 		                                                            // No actions required.
 		                                                            break;
-		                                                        case 'woo_reviews':
-		                                                        case 'comments':
-		                                                            update_comment_meta( $missingPostRecord['post_id'], $cf_name, $update_missing_cf_value[$cf_i] );
-		                                                            $logger and call_user_func($logger, sprintf(__('Instead of deletion comment with ID `%s`, set Custom Field `%s` to value `%s`', 'wp_all_import_plugin'), $missingPostRecord['post_id'], $cf_name, $update_missing_cf_value[$cf_i]));
-		                                                            break;
 		                                                        default:
 		                                                            update_post_meta( $missingPostRecord['post_id'], $cf_name, $update_missing_cf_value[$cf_i] );
 		                                                            $logger and call_user_func($logger, sprintf(__('Instead of deletion post with ID `%s`, set Custom Field `%s` to value `%s`', 'wp_all_import_plugin'), $missingPostRecord['post_id'], $cf_name, $update_missing_cf_value[$cf_i]));
@@ -435,10 +430,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 	                                                            break;
 	                                                        case 'gf_entries':
 	                                                            GFFormsModel::update_entry_property( $missingPostRecord['post_id'], 'status', 'trash' );
-	                                                            break;
-	                                                        case 'woo_reviews':
-	                                                        case 'comments':
-	                                                            wp_trash_comment($missingPostRecord['post_id']);
 	                                                            break;
 	                                                        default:
 	                                                            if ($final_post_type = get_post_type($missingPostRecord['post_id']) and 'trash' != get_post_status($missingPostRecord['post_id'])) {
@@ -480,10 +471,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 	                                                                    GFFormsModel::update_entry_property( $missingPostRecord['post_id'], 'is_starred', 0 );
 	                                                                    break;
 	                                                            }
-	                                                            break;
-	                                                        case 'woo_reviews':
-	                                                        case 'comments':
-	                                                            wp_set_comment_status($missingPostRecord['post_id'], $this->options['status_of_removed']);
 	                                                            break;
 	                                                        default:
 	                                                            if ($final_post_type = get_post_type($missingPostRecord['post_id']) and $this->options['status_of_removed'] != get_post_status($missingPostRecord['post_id'])) {
@@ -527,8 +514,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                                                         case 'import_users':
                                                         case 'shop_customer':
                                                         case 'gf_entries':
-                                                        case 'woo_reviews':
-                                                        case 'comments':
                                                             // No action needed;
                                                             break;
                                                         case 'taxonomies':
@@ -621,13 +606,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                                                         do_action('pmxi_delete_taxonomies', $ids);
                                                         foreach ($ids as $term_id){
                                                             wp_delete_term( $term_id, $this->options['taxonomy_type'] );
-                                                        }
-                                                        break;
-                                                    case 'woo_reviews':
-                                                    case 'comments':
-                                                        do_action('pmxi_delete_comments', $ids);
-                                                        foreach ($ids as $comment_id){
-                                                            wp_delete_comment( $comment_id, TRUE );
                                                         }
                                                         break;
                                                     case 'gf_entries':
@@ -2396,10 +2374,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 									case 'taxonomies':
 										delete_term_meta( $pid, $image_custom_field );
 										break;
-									case 'woo_reviews':
-									case 'comments':
-										delete_comment_meta( $pid, $image_custom_field );
-										break;
 									case 'gf_entries':
 										// No actions required.
 										break;
@@ -3507,6 +3481,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                                                     $term_args = sanitize_term($term_args, $tx_name, 'db');
                                                     $term_name = wp_unslash( $term_args['name'] );
                                                     $term_slug = sanitize_title( $term_name );
+                                                    $term_slug = pmxi_truncate_term_slug($term_slug);
                                                     $term = (empty($this->options['tax_is_full_search_' . $this->options['tax_logic'][$tx_name]][$tx_name])) ? is_exists_term($term_slug, $tx_name, (int)$parent_id) : is_exists_term($term_slug, $tx_name);
 													if( empty($this->options['do_not_create_terms']) && empty($term) && !is_wp_error($term) ) {
                                                         $term_attr = array('parent' => (!empty($parent_id)) ? $parent_id : 0);
@@ -3712,10 +3687,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 			case 'import_users':
 			case 'shop_customer':
                 $title = $articleData['user_login'];
-                break;
-            case 'comments':
-            case 'woo_reviews':
-                $title = wp_trim_words($articleData['comment_content'], 10);
                 break;
             default:
                 $title = $articleData['post_title'];
@@ -3936,11 +3907,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 	                                                update_term_meta( $missingPostRecord['post_id'], $cf_name, $update_missing_cf_value[$cf_i] );
 	                                                $logger and call_user_func($logger, sprintf(__('Instead of deletion taxonomy term with ID `%s`, set Custom Field `%s` to value `%s`', 'wp_all_import_plugin'), $missingPostRecord['post_id'], $cf_name, $update_missing_cf_value[$cf_i]));
 	                                                break;
-	                                            case 'woo_reviews':
-	                                            case 'comments':
-	                                                update_comment_meta( $missingPostRecord['post_id'], $cf_name, $update_missing_cf_value[$cf_i] );
-	                                                $logger and call_user_func($logger, sprintf(__('Instead of deletion comment with ID `%s`, set Custom Field `%s` to value `%s`', 'wp_all_import_plugin'), $missingPostRecord['post_id'], $cf_name, $update_missing_cf_value[$cf_i]));
-	                                                break;
 	                                            case 'gf_entries':
 	                                                // No actions required.
 	                                                break;
@@ -3964,10 +3930,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 	                                            break;
 	                                        case 'gf_entries':
 	                                            GFFormsModel::update_entry_property( $missingPostRecord['post_id'], 'status', 'trash' );
-	                                            break;
-	                                        case 'woo_reviews':
-	                                        case 'comments':
-	                                            wp_trash_comment($missingPostRecord['post_id']);
 	                                            break;
 	                                        default:
 	                                            if ($final_post_type = get_post_type($missingPostRecord['post_id']) and 'trash' != get_post_status($missingPostRecord['post_id'])) {
@@ -4012,10 +3974,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 	                                                    break;
 	                                            }
 	                                            break;
-	                                        case 'woo_reviews':
-	                                        case 'comments':
-	                                            wp_set_comment_status($missingPostRecord['post_id'], $this->options['status_of_removed']);
-	                                            break;
 	                                        default:
 	                                            if ($final_post_type = get_post_type($missingPostRecord['post_id']) and $this->options['status_of_removed'] != get_post_status($missingPostRecord['post_id'])) {
 	                                                $this->wpdb->update( $this->wpdb->posts, array('post_status' => $this->options['status_of_removed']), array('ID' => $missingPostRecord['post_id']) );
@@ -4056,8 +4014,6 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                                 switch ($this->options['custom_type']) {
                                     case 'import_users':
                                     case 'shop_customer':
-                                    case 'woo_reviews':
-                                    case 'comments':
                                     case 'gf_entries':
                                         // No action needed.
                                         break;

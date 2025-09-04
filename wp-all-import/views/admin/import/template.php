@@ -15,6 +15,8 @@
 
 	<?php $visible_sections = apply_filters('pmxi_visible_template_sections', array('caption', 'main', 'taxonomies', 'cf', 'featured', 'other', 'nested'), $post['custom_type']); ?>
 
+    <?php if (!$this->isWizard){ require_once 'filters.php'; } ?>
+
 	<table class="wpallimport-layout">
 		<tr>
 			<td class="left">
@@ -33,11 +35,9 @@
 				<?php if ( in_array('caption', $visible_sections) ): ?>
 
 					<div class="wpallimport-collapsed wpallimport-section">
-						<div class="wpallimport-content-section" style="overflow: hidden; padding-bottom: 0;">
+						<div class="wpallimport-content-section" style="overflow: hidden; padding-bottom: 0; margin-top: 0;">
 							<div class="wpallimport-collapsed-header" style="margin-bottom: 15px;">
-								<?php if ( $post_type == 'taxonomies' ){ ?>
-									<h3><?php _e('Name & Description', 'wp_all_import_plugin'); ?></h3>
-								<?php } elseif ( $post_type == 'product'){ ?>
+                                <?php if ( $post_type == 'product'){ ?>
 									<h3><?php _e('Title & Description', 'wp_all_import_plugin'); ?></h3>
 								<?php } else { ?>
 									<h3><?php _e('Title & Content', 'wp_all_import_plugin'); ?></h3>
@@ -95,7 +95,7 @@
 													<input type="hidden" name="is_leave_html" value="0" />
 													<input type="checkbox" id="is_leave_html" name="is_leave_html" class="fix_checkbox" value="1" <?php echo $post['is_leave_html'] ? 'checked="checked"' : '' ?> style="position:relative;"/>
 													<label for="is_leave_html"><?php _e('Decode HTML entities with <b>html_entity_decode</b>', 'wp_all_import_plugin') ?></label>
-													<a class="wpallimport-help" href="#help" style="position:relative; top:1px;" title="If HTML code is showing up in your posts, use this option. You can also use <br /><br /><i>[html_entity_decode({my/xpath})]</i><br /><br /> or <br /><br /><i>[htmlentities({my/xpath})]</i><br /><br /> or <br /><br /><i>[htmlspecialchars_decode({my/xpath})]</i><br /><br /> to decode or encode HTML in your file.">?</a>
+                                                    <a class="wpallimport-help" href="#help" style="position:relative; top:1px;" title="<?php _e('If HTML code is showing up in your posts, use this option. You can also use <br /><br /><i>[html_entity_decode({my/xpath})]</i><br /><br /> or <br /><br /><i>[htmlentities({my/xpath})]</i><br /><br /> or <br /><br /><i>[htmlspecialchars_decode({my/xpath})]</i><br /><br /> to decode or encode HTML in this import file.', 'wp_all_import_plugin'); ?>">?</a>
 												</div>
 											</div>
 										</div>
@@ -112,7 +112,9 @@
 
 				<?php
 
-					if ( in_array('main', $visible_sections) ) do_action('pmxi_extend_options_main', $post_type, $post);
+					if ( in_array('main', $visible_sections) ) {
+                        do_action('pmxi_extend_options_main', $post_type, $post);
+                    }
 
 					if ( in_array('featured', $visible_sections) ) {
 						$is_images_section_enabled = apply_filters('wp_all_import_is_images_section_enabled', true, $post_type);
@@ -145,44 +147,44 @@
 
 					$uploads = wp_upload_dir();
 					$functions = $uploads['basedir'] . DIRECTORY_SEPARATOR . WP_ALL_IMPORT_UPLOADS_BASE_DIRECTORY . DIRECTORY_SEPARATOR . 'functions.php';
+				    $functions = apply_filters( 'import_functions_file_path', $functions );
+				    ?>
 
-					?>
-
-					<div class="wpallimport-collapsed closed wpallimport-section">
-						<div class="wpallimport-content-section">
-							<div class="wpallimport-collapsed-header">
-								<h3><?php _e('Function Editor', 'wp_all_import_plugin'); ?></h3>
-							</div>
-							<div class="wpallimport-collapsed-content" style="padding: 0;">
-								<div class="wpallimport-collapsed-content-inner">
-									<div class="wpallimport-free-edition-notice" style="text-align:center; margin-top:0; margin-bottom: 40px;">
-										<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=function-editor" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to use the Function Editor', 'wp_all_import_plugin');?></a>
-										<p><?php _e('If you already own it, remove the free edition and install the Pro edition.', 'wp_all_import_plugin'); ?></p>
-									</div>
-
-									<textarea id="wp_all_import_code" name="wp_all_import_code"><?php echo "<?php\n\n?>";?></textarea>
-
-									<div class="input" style="margin-top: 10px;">
-
-										<div class="input" style="display:inline-block; margin-right: 20px;">
-											<input type="button" class="button-primary wp_all_import_save_functions" disabled="disabled" value="<?php _e("Save Functions", 'wp_all_import_plugin'); ?>"/>
-											<a href="#help" class="wpallimport-help" title="<?php printf(__("Add functions here for use during your import. You can access this file at %s", "wp_all_import_plugin"), esc_attr(preg_replace("%.*wp-content%", "wp-content", $functions)));?>" style="top: 0;">?</a>
-											<div class="wp_all_import_functions_preloader"></div>
-										</div>
-										<div class="input wp_all_import_saving_status" style="display:inline-block;">
-
-										</div>
-
-									</div>
-
-								</div>
-							</div>
-						</div>
+	<div class="wpallimport-collapsed closed wpallimport-section">
+		<div class="wpallimport-content-section">
+			<div class="wpallimport-collapsed-header">
+				<h3><?php _e('Function Editor', 'wp_all_import_plugin'); ?></h3>
+			</div>
+			<div class="wpallimport-collapsed-content" style="padding: 0;">
+				<div class="wpallimport-collapsed-content-inner">
+					<div class="wpallimport-free-edition-notice" style="text-align:center; margin-top:0; margin-bottom: 40px;">
+						<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=function-editor" target="_blank" class="upgrade_link"><?php _e('Upgrade to the Pro edition of WP All Import to use the Function Editor', 'wp_all_import_plugin');?></a>
+						<p><?php _e('If you already own it, remove the free edition and install the Pro edition.', 'wp_all_import_plugin'); ?></p>
 					</div>
 
-				<hr>
+					<textarea id="wp_all_import_code" name="wp_all_import_code"><?php echo "<?php\n\n?>";?></textarea>
 
-				<div class="input wpallimport-section load-template-container" style="padding-bottom: 8px; padding-left: 8px;">
+					<div class="input" style="margin-top: 10px;">
+
+						<div class="input" style="display:inline-block; margin-right: 20px;">
+							<input type="button" class="button-primary wp_all_import_save_functions" disabled="disabled" value="<?php _e("Save Functions", 'wp_all_import_plugin'); ?>"/>
+							<a href="#help" class="wpallimport-help" title="<?php printf(__("Add functions here for use during your import. You can access this file at %s", "wp_all_import_plugin"), esc_attr(preg_replace("%.*wp-content%", "wp-content", $functions)));?>" style="top: 0;">?</a>
+							<div class="wp_all_import_functions_preloader"></div>
+						</div>
+						<div class="input wp_all_import_saving_status" style="display:inline-block;">
+
+						</div>
+
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+
+<hr>
+
+<div class="input wpallimport-section load-template-container" style="padding-bottom: 8px; padding-left: 8px;">
 
 					<?php
 						wp_all_import_template_notifications( $post, 'notice' );
@@ -218,7 +220,7 @@
 							<input type="hidden" value="<?php _e('Upgrade to the Pro edition of WP All Import to Import Custom Fields', 'wp_all_import_plugin');?>" class="wpallimport-dynamic-notice-cf-text"/>
 							<input type="hidden" value="<?php _e('Upgrade to the Pro edition of WP All Import to Import Images', 'wp_all_import_plugin');?>" class="wpallimport-dynamic-notice-images-text"/>
 							<input type="hidden" value="<?php _e('Upgrade to the Pro edition of WP All Import to Import Images and Custom Fields', 'wp_all_import_plugin');?>" class="wpallimport-dynamic-notice-cf-image-text"/>
-							<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=images-and-or-custom-fields" target="_blank" class="upgrade_link"></a>
+							<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=images-and-or-custom-fields" target="_blank" class="upgrade_link"></a>
 							<p><?php _e('If you already own it, remove the free edition and install the Pro edition.', 'wp_all_import_plugin'); ?></p>
 						</div>
 
@@ -228,22 +230,20 @@
 						<input type="hidden" name="security" value="<?php echo wp_create_nonce( "wp_all_import_preview" ); ?>" />
 
 						<?php if ($this->isWizard):?>
-							<a href="<?php echo esc_url(add_query_arg('action', 'element', $this->baseUrl)) ?>" class="back rad3" style="float:none;"><?php _e('Back to Step 2', 'wp_all_import_plugin') ?></a>
+							<a href="<?php echo esc_url(add_query_arg('action', 'element', $this->baseUrl)); ?>" class="back rad3" style="float:none;"><?php _e('Back to Create Filters', 'wp_all_import_plugin') ?></a>
 						<?php else: ?>
 							<a href="<?php echo esc_url(remove_query_arg('id', remove_query_arg('action', $this->baseUrl))); ?>" class="back rad3" style="float:none;"><?php _e('Back to Manage Imports', 'wp_all_import_plugin') ?></a>
 						<?php endif; ?>
-						<input type="submit" class="button button-primary button-hero wpallimport-large-button" value="<?php _e( ($this->isWizard) ? 'Continue to Step 4' : 'Update Template', 'wp_all_import_plugin') ?>" />
+						<input type="submit" class="button button-primary button-hero wpallimport-large-button" value="<?php _e( ($this->isWizard) ? 'Continue to Import Settings' : 'Update Template', 'wp_all_import_plugin') ?>" />
 					</div>
 
 				</div>
 
-				<a href="http://soflyy.com/" target="_blank" class="wpallimport-created-by"><?php _e('Created by', 'wp_all_import_plugin'); ?> <span></span></a>
-
-			</td>
+				</td>
 			<?php if ($this->isWizard or $this->isTemplateEdit): ?>
 				<td class="right template-sidebar">
 					<div style="position:relative;">
-					<?php $this->tag( false ); ?>
+					    <?php $this->tag( false ); ?>
 					</div>
 				</td>
 			<?php endif ?>
@@ -251,3 +251,7 @@
 	</table>
 
 </form>
+
+<div class="wpallimport-display-columns wpallimport-margin-top-forty">
+	<?php echo apply_filters('wpallimport_footer', ''); ?>
+</div>

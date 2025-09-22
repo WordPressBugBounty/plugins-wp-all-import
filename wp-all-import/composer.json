@@ -20,7 +20,7 @@
     },
     "require": {
         "php": "^7.4 | ^8.0",
-        "enshrined/svg-sanitize": "^0.21.0",
+        "enshrined/svg-sanitize": "^0.22.0",
         "phpoffice/phpspreadsheet": "^1.30"
     }
 }

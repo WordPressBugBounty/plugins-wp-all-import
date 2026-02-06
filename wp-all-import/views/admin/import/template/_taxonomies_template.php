@@ -66,13 +66,14 @@ if ( ! empty($post_taxonomies)):
 														<?php if ($ctx->hierarchical): ?>
 														<div class="input">
 															<input type="radio" name="tax_logic[<?php echo esc_attr($ctx->name);?>]" value="hierarchical" id="tax_logic_hierarchical_<?php echo esc_attr($ctx->name);?>" class="switcher" <?php echo ( ! empty($post['tax_logic'][$ctx->name]) and $post['tax_logic'][$ctx->name] == 'hierarchical') ? 'checked="checked"' : ''; ?>/>
-															<label for="tax_logic_hierarchical_<?php echo esc_attr($ctx->name);?>"><?php printf(__('Each %s has one %s, with the hierarchy defined by paths', 'wp_all_import_plugin'), esc_attr($custom_type->labels->singular_name), esc_attr($ctx->labels->singular_name)); ?></label>
+															<label for="tax_logic_hierarchical_<?php echo esc_attr($ctx->name);?>"><?php printf(__('%ss have hierarchical (parent/child) %s (i.e. Sports > Golf > Clubs > Putters)', 'wp_all_import_plugin'), esc_attr($custom_type->labels->singular_name), esc_attr($ctx->labels->name)); ?></label>
 															<div class="switcher-target-tax_logic_hierarchical_<?php echo esc_attr($ctx->name);?> sub_input">
 																<div class="input">
-																	<input type="radio" name="tax_hierarchical_logic[<?php echo esc_attr($ctx->name);?>]" value="entire" id="hierarchical_logic_entire_<?php echo esc_attr($ctx->name);?>" class="switcher" <?php echo (empty($post['tax_hierarchical_logic'][$ctx->name]) or $post['tax_hierarchical_logic'][$ctx->name] == 'entire') ? 'checked="checked"' : ''; ?>/>
-																	<label for="hierarchical_logic_entire_<?php echo esc_attr($ctx->name);?>"><?php _e('All hierarchical paths are in a single column', 'wp_all_import_plugin'); ?></label>
-																	<div class="switcher-target-hierarchical_logic_entire_<?php echo esc_attr($ctx->name);?> sub_input">
-																		<ol class="sortable no-margin" style="margin-left: 20px;">
+																	<input type="hidden" name="tax_hierarchical_logic_entire[<?php echo esc_attr($ctx->name);?>]" value="0" />
+																	<input type="checkbox" name="tax_hierarchical_logic_entire[<?php echo esc_attr($ctx->name);?>]" value="1" id="hierarchical_logic_entire_<?php echo esc_attr($ctx->name);?>" class="switcher" <?php echo (!empty($post['tax_hierarchical_logic_entire'][$ctx->name])) ? 'checked="checked"' : ''; ?>/>
+																	<label for="hierarchical_logic_entire_<?php echo esc_attr($ctx->name);?>"><?php _e('An element in my file contains the entire hierarchy (i.e. you have an element with a value = Sports > Golf > Clubs > Putters)', 'wp_all_import_plugin'); ?></label>
+																	<div class="switcher-target-hierarchical_logic_entire_<?php echo esc_attr($ctx->name);?> sub_input" style="margin-left: 20px; padding-left: 20px;">
+																		<ul class="tax_hierarchical_logic no-margin">
 																			<?php $txes_count = 0; if ( ! empty($post['tax_hierarchical_xpath'][$ctx->name])): foreach ($post['tax_hierarchical_xpath'][$ctx->name] as $k => $path) : if (empty($path)) continue; ?>
 																				<li class="dragging">
 																					<div style="position:relative;">
@@ -85,28 +86,39 @@ if ( ! empty($post_taxonomies)):
 																			<?php if ( ! $txes_count): ?>
 																				<li class="dragging">
 																					<div style="position:relative;">
-																						<input type="hidden" class="assign_term" name="tax_hierarchical_assing[<?php echo esc_attr($ctx->name);?>][]" value="1"/>
-																						<input type="text" class="widefat hierarchical_xpath_field" name="tax_hierarchical_xpath[<?php echo esc_attr($ctx->name); ?>][]" value=""/>
+																						<input type="hidden" class="assign_term" name="tax_hierarchical_assing[<?php echo esc_attr($ctx->name);?>][0]" value="1"/>
+																				    	<input type="text" class="widefat hierarchical_xpath_field" name="tax_hierarchical_xpath[<?php echo esc_attr($ctx->name); ?>][]" value=""/>
 																						<a href="javascript:void(0);" class="icon-item remove-ico"></a>
-																					</div>
-																				</li>
+																				    </div>
+																			    </li>
 																			<?php endif; ?>
-																		</ol>
+																			<li class="dragging template">
+																				<div style="position:relative;">
+																					<input type="hidden" class="assign_term" name="tax_hierarchical_assing[<?php echo esc_attr($ctx->name);?>][NUMBER]" value="1"/>
+																			    	<input type="text" class="widefat hierarchical_xpath_field" name="tax_hierarchical_xpath[<?php echo esc_attr($ctx->name); ?>][]" value=""/>
+																					<a href="javascript:void(0);" class="icon-item remove-ico"></a>
+																			    </div>
+																		    </li>
+																		</ul>
+																		<label><?php _e('Separated by', 'wp_all_import_plugin'); ?></label>
+																		<input type="text" class="small tax_delim" name="tax_hierarchical_delim[<?php echo esc_attr($ctx->name); ?>]" value="<?php echo esc_attr(( ! empty($post['tax_hierarchical_delim'][$ctx->name]) ) ? str_replace("&amp;","&", htmlentities(htmlentities($post['tax_hierarchical_delim'][$ctx->name]))) : '>'); ?>" />
 																		<div class="input">
-																			<label><?php _e('Separated by', 'wp_all_import_plugin'); ?></label>										
-																			<input type="text" class="small tax_delim" name="tax_hierarchical_delim[<?php echo esc_attr($ctx->name); ?>]" value="<?php echo esc_attr(( ! empty($post['tax_hierarchical_delim'][$ctx->name]) ) ? str_replace("&amp;","&", htmlentities(htmlentities($post['tax_hierarchical_delim'][$ctx->name]))) : '>'); ?>" />
+																			<input type="hidden" name="is_tax_hierarchical_group_delim[<?php echo esc_attr($ctx->name); ?>]" value="0" />
+																			<input type="checkbox" id="is_tax_hierarchical_group_delim_<?php echo esc_attr($ctx->name); ?>" name="is_tax_hierarchical_group_delim[<?php echo esc_attr($ctx->name); ?>]" value="1" class="switcher" <?php echo ( ! empty($post['is_tax_hierarchical_group_delim'][$ctx->name])) ? 'checked="checked"': '' ?> />
+																			<label for="is_tax_hierarchical_group_delim_<?php echo esc_attr($ctx->name); ?>"><?php printf(__('Separate hierarchy groups via symbol', 'wp_all_import_plugin'), esc_attr($custom_type->label)) ?></label>
+																			<div class="switcher-target-is_tax_hierarchical_group_delim_<?php echo esc_attr($ctx->name);?> sub_input">
+																				<label><?php _e('Separated by', 'wp_all_import_plugin'); ?></label>
+																				<input type="text" class="small tax_delim" name="tax_hierarchical_group_delim[<?php echo esc_attr($ctx->name); ?>]" value="<?php echo esc_attr(( ! empty($post['tax_hierarchical_group_delim'][$ctx->name]) ) ? str_replace("&amp;","&", htmlentities(htmlentities($post['tax_hierarchical_group_delim'][$ctx->name]))) : '|'); ?>" />
+																			</div>
 																		</div>
-																		<div class="input tax_is_full_search_hierarchical" style="margin: 10px 0;">
-																			<input type="hidden" name="tax_is_full_search_hierarchical[<?php echo esc_attr($ctx->name); ?>]" value="0"/>
-																			<input type="checkbox" id="tax_is_full_search_hierarchical_<?php echo esc_attr($ctx->name); ?>" class="switcher" <?php if ( ! empty($post['tax_is_full_search_hierarchical'][$ctx->name]) ) echo "checked='checked'"; ?> name="tax_is_full_search_hierarchical[<?php echo esc_attr($ctx->name); ?>]" value="1"/>
-																			<label for="tax_is_full_search_hierarchical_<?php echo esc_attr($ctx->name);?>"><?php printf(__('Try to match terms to existing child %s', 'wp_all_import_plugin'), esc_attr($ctx->labels->name)); ?></label>
-																			<a href="#help" class="wpallimport-help" style="position: relative; top: -2px;" title="<?php printf(__('If this box is checked, WP All Import will try to match the %s in your import file to child %s. If it can\'t make a successful match, it will create a new %s using the %s in your import file.', 'wp_all_import_plugin'), $ctx->labels->singular_name, $ctx->labels->name, $ctx->labels->singular_name, $ctx->labels->singular_name) ?>">?</a>
+																		<div class="input">
+																			<a href="javascript:void(0);" class="icon-item add-new-cat" style="width: 200px;"><?php _e('Add Another Hierarchy Group','wp_all_import_plugin');?></a>
 																		</div>
-																		<a href="javascript:void(0);" class="icon-item add-new-ico"><?php _e('Add Another Row','wp_all_import_plugin');?></a>
 																	</div>
 																</div>
 																<div class="input">
-																	<input type="radio" name="tax_hierarchical_logic[<?php echo esc_attr($ctx->name);?>]" value="manual" id="hierarchical_logic_manual_<?php echo esc_attr($ctx->name);?>" class="switcher" <?php echo ( ! empty($post['tax_hierarchical_logic'][$ctx->name]) and $post['tax_hierarchical_logic'][$ctx->name] == 'manual') ? 'checked="checked"' : ''; ?>/>
+																	<input type="hidden" name="tax_hierarchical_logic_manual[<?php echo esc_attr($ctx->name);?>]" value="0" />
+																	<input type="checkbox" name="tax_hierarchical_logic_manual[<?php echo esc_attr($ctx->name);?>]" value="1" id="hierarchical_logic_manual_<?php echo esc_attr($ctx->name);?>" class="switcher" <?php echo (!empty($post['tax_hierarchical_logic_manual'][$ctx->name])) ? 'checked="checked"' : ''; ?>/>
 																	<label for="hierarchical_logic_manual_<?php echo esc_attr($ctx->name);?>"><?php _e('Manually design the hierarchy with drag & drop', 'wp_all_import_plugin'); ?></label>
 																	<div class="switcher-target-hierarchical_logic_manual_<?php echo esc_attr($ctx->name);?> sub_input">
 																		<p style="margin-bottom: 10px;"><?php printf(__('Drag the <img src="%s" class="wpallimport-drag-icon"/> to the right to create a child, drag up and down to re-order.', 'wp_all_import_plugin'), esc_url(WP_ALL_IMPORT_ROOT_URL . '/static/img/drag.png')); ?></p>

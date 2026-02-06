@@ -2874,8 +2874,18 @@
 
 		// Add all possible tags as options if not already added
 		tags.forEach(tag => {
-			if (tag.trim() && !$select.find(`option[value="${tag.trim()}"]`).length) {
-				$select.append(`<option value="${tag.trim()}">${tag.trim()}</option>`);
+			if (tag.trim()) {
+				let optionExists = false;
+				$select.find('option').each(function() {
+					if ($(this).val() === tag.trim()) {
+						optionExists = true;
+						return false;
+					}
+				});
+
+				if (!optionExists) {
+					$select.append(`<option value="${tag.trim()}">${tag.trim()}</option>`);
+				}
 			}
 		});
 

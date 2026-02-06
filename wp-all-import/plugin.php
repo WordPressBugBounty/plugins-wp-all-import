@@ -3,7 +3,7 @@
 Plugin Name: WP All Import
 Plugin URI: https://www.wpallimport.com/wordpress-xml-csv-import/?utm_source=import-plugin-free&utm_medium=wp-plugins-page&utm_campaign=upgrade-to-pro
 Description: The most powerful solution for importing XML and CSV files to WordPress. Create Posts and Pages with content from any XML or CSV file. A paid upgrade to WP All Import Pro is available for support and additional features.
-Version: 3.9.5
+Version: 4.0.0
 Author: Soflyy
 */
 
@@ -25,7 +25,7 @@ define('WP_ALL_IMPORT_ROOT_URL', rtrim(plugin_dir_url(__FILE__), '/'));
  */
 define('WP_ALL_IMPORT_PREFIX', 'pmxi_');
 
-define('PMXI_VERSION', '3.9.5');
+define('PMXI_VERSION', '4.0.0');
 
 define('PMXI_EDITION', 'free');
 
@@ -344,7 +344,31 @@ final class PMXI_Plugin {
 
 	public function init(){
 		$this->load_plugin_textdomain();
-        self::$is_php_allowed = apply_filters('wp_all_import_is_php_allowed', TRUE);
+        self::$is_php_allowed = apply_filters('wp_all_import_is_php_allowed', self::wpai_determine_php_allowed());
+	}
+
+	/**
+	 * Determine if PHP execution should be allowed based on WordPress security constants.
+	 *
+	 * Only restricts PHP execution when BOTH DISALLOW_FILE_EDIT and DISALLOW_FILE_MODS are set to true.
+	 * This is the only configuration that creates a true security boundary where the plugin would
+	 * grant NEW code execution capabilities that don't already exist.
+	 *
+	 * @return bool True if PHP execution is allowed, false otherwise.
+	 */
+	public static function wpai_determine_php_allowed() {
+		// Only restrict if BOTH security constants are set
+		// This is the only configuration that creates a true security boundary
+		if (defined('DISALLOW_FILE_EDIT') && DISALLOW_FILE_EDIT &&
+			defined('DISALLOW_FILE_MODS') && DISALLOW_FILE_MODS) {
+			return false;
+		}
+
+		// Otherwise allow - user has other code execution vectors anyway
+		// - If only DISALLOW_FILE_EDIT is set: admin can still install plugins (file manager, code snippets, etc.)
+		// - If only DISALLOW_FILE_MODS is set: admin can still edit theme/plugin files directly
+		// - If neither is set: admin has full code execution capabilities
+		return true;
 	}
 
 	public function plugin_row_meta($links, $file)

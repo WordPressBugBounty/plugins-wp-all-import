@@ -234,6 +234,9 @@
 						<?php else: ?>
 							<a href="<?php echo esc_url(remove_query_arg('id', remove_query_arg('action', $this->baseUrl))); ?>" class="back rad3" style="float:none;"><?php _e('Back to Manage Imports', 'wp_all_import_plugin') ?></a>
 						<?php endif; ?>
+
+						<button type="button" id="wpai-full-preview-btn" class="button button-secondary button-hero wpallimport-large-button" style="margin: 0 10px; background: 50% #425f9a; color: #fff;"><?php _e('Preview', 'wp_all_import_plugin') ?></button>
+
 						<input type="submit" class="button button-primary button-hero wpallimport-large-button" value="<?php _e( ($this->isWizard) ? 'Continue to Import Settings' : 'Update Template', 'wp_all_import_plugin') ?>" />
 					</div>
 
@@ -251,6 +254,8 @@
 	</table>
 
 </form>
+
+<?php include __DIR__ . '/full-preview-modal.php'; ?>
 
 <div class="wpallimport-display-columns wpallimport-margin-top-forty">
 	<?php echo apply_filters('wpallimport_footer', ''); ?>

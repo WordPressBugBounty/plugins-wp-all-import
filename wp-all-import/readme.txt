@@ -2,7 +2,7 @@
 Contributors: soflyy, wpallimport
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 3.9.5
+Stable tag: 4.0.0
 Requires PHP: 7.4
 Tags: wordpress csv import, wordpress xml import, xml, csv, datafeed, import, migrate, import csv to wordpress, import xml to wordpress, advanced xml import, advanced csv import, bulk csv import, bulk xml import, bulk data import, xml to custom post type, csv to custom post type, woocommerce csv import, woocommerce xml import, csv import, import csv, xml import, import xml, csv importer
 
@@ -195,6 +195,15 @@ If you are using the free version of the plugin, you can obtain support through 
 4. Manage imports.
 
 == Changelog ==
+
+= 4.0.0 =
+* NOTE: inline PHP execution is disabled when both DISALLOW_FILE_EDIT and DISALLOW_FILE_MODS are set in wp-config.php
+* security improvement: fixes CVE-2025-12733
+* maintenance: update PhpSpreadsheet
+
+= 3.9.6 =
+* fix: hierarchical taxonomy terms are not imported correctly
+* fix: JS error in some cases with certain field names
 
 = 3.9.5 =
 * improvement: upgrade svg-sanitize library

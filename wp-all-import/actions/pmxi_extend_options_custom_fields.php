@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * @param $post_type
  * @param $post
@@ -25,6 +26,7 @@ function pmxi_pmxi_extend_options_custom_fields($post_type, $post) {
 				$groups = acf_get_local_field_groups();
 			}
 		} else {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			$groups = apply_filters('acf/get_field_groups', array());
 		}
 

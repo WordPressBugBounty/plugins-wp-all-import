@@ -1,4 +1,19 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
+if ( ! defined( 'ABSPATH' ) ) exit;
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fread
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fputs
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_touch
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_is_writable
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_is_writeable
+// phpcs:disable WordPress.WP.AlternativeFunctions.unlink_unlink
+// phpcs:disable WordPress.WP.AlternativeFunctions.rename_rename
+// phpcs:disable Squiz.PHP.DiscouragedFunctions.Discouraged
 // --------------------------------------------------------------------------------
 // PhpConcept Library - Zip Module 2.8.2
 // --------------------------------------------------------------------------------
@@ -221,7 +236,7 @@ define('WPAI_PCLZIP_CB_POST_DELETE', 78008);
 
 			// ----- Tests the zlib
 			if (!function_exists('gzopen')) {
-				die('Abort '.basename(__FILE__).' : Missing zlib extensions');
+				die(esc_html('Abort '.basename(__FILE__).' : Missing zlib extensions'));
 			}
 
 			// ----- Set the attributes
@@ -3779,7 +3794,7 @@ define('WPAI_PCLZIP_CB_POST_DELETE', 78008);
 						$v_buffer = @fread($this->zip_fd, $p_entry['compressed_size']);
 
 						// ----- Send the file to the output
-						echo $v_buffer;
+						echo $v_buffer; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Raw archive extraction byte stream sent to PHP output.
 						unset($v_buffer);
 					} else {
 						// ----- Read the compressed file in a buffer (one shot)
@@ -3790,7 +3805,7 @@ define('WPAI_PCLZIP_CB_POST_DELETE', 78008);
 						unset($v_buffer);
 
 						// ----- Send the file to the output
-						echo $v_file_content;
+						echo $v_file_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Decompressed archive bytes sent to PHP output.
 						unset($v_file_content);
 					}
 				}

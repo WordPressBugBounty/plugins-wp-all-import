@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Plugin database schema
  * WARNING:
@@ -26,6 +27,7 @@ if (!empty($wpdb->collate)) {
 
 $table_prefix = PMXI_Plugin::getInstance()->getTablePrefix();
 
+// phpcs:ignore PluginCheck.CodeAnalysis.Heredoc.NotAllowed,WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 $plugin_queries = <<<SCHEMA
 CREATE TABLE {$table_prefix}templates (
 	id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,

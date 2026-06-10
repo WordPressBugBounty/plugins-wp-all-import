@@ -18,9 +18,16 @@
             "php": "7.4"
         }
     },
+    "repositories": [
+        { "type": "vcs", "url": "https://github.com/soflyy/wpai-test-harness" }
+    ],
     "require": {
         "php": "^7.4 | ^8.0",
         "enshrined/svg-sanitize": "^0.22.0",
         "phpoffice/phpspreadsheet": "^1.30"
+    },
+    "require-dev": {
+        "soflyy/wpai-test-harness": "dev-master",
+        "phpunit/phpunit": "^9.0"
     }
 }

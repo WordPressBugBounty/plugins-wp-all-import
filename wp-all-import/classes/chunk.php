@@ -1,5 +1,6 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
 include __DIR__ . "/XmlStreamReader/autoload.php";
 
 use Prewk\XmlStringStreamer;
@@ -90,20 +91,21 @@ class PMXI_Chunk {
 
 			$this->parser_type = empty( $parser_type ) ? 'xmlreader' : $parser_type;
 
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			$sleep = apply_filters( 'wp_all_import_shard_delay', 0 );
 			usleep( $sleep );
 
 			$is_html = false;
-			$f       = @fopen( $file, "rb" );
+			$f       = @fopen( $file, "rb" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 			if ( is_resource( $file ) ) {
 				while ( ! @feof( $f ) ) {
-					$chunk = @fread( $f, 1024 );
+					$chunk = @fread( $f, 1024 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
 					if ( strpos( $chunk, "<!DOCTYPE" ) === 0 ) {
 						$is_html = true;
 					}
 					break;
 				}
-				@fclose( $f );
+				@fclose( $f ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 			}
 
 			if ( $is_html ) {
@@ -216,6 +218,7 @@ class PMXI_Chunk {
 						}
 					}
 
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 					$this->options['element'] = apply_filters( 'wp_all_import_root_element', $this->options['element'], $import_id, $this->cloud );
 				}
 			}
@@ -238,7 +241,7 @@ class PMXI_Chunk {
 		} catch ( Throwable $e ) {
 
 			if (defined('WP_DEBUG') && WP_DEBUG) {
-				error_log('Error in PMXI_Chunk constructor: ' . $e->getMessage());
+				error_log('Error in PMXI_Chunk constructor: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 
 			$this->options     = array();
@@ -252,6 +255,7 @@ class PMXI_Chunk {
 	}
 
 	function get_file_path() {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		$is_enabled_stream_filter = apply_filters( 'wp_all_import_is_enabled_stream_filter', true );
 		if ( function_exists( 'stream_filter_register' ) and $this->options['filter'] and $is_enabled_stream_filter and $this->parser_type == 'xmlreader' ) {
 			stream_filter_register( 'preprocessxml', 'preprocessXml_filter' );
@@ -292,6 +296,11 @@ class PMXI_Chunk {
 	 */
 	public function read( $debug = false ) {
 
+		// Constructor may have set reader to null on failure (e.g. empty path).
+		if ( ! $this->reader ) {
+			return false;
+		}
+
 		// trim it
 		$element = trim( $this->options['element'] );
 
@@ -326,6 +335,7 @@ class PMXI_Chunk {
 				$xml = false;
 			}
 		} else {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			$is_preprocess_enabled = apply_filters( 'is_xml_preprocess_enabled', true );
 
 			while ( $xml = $this->reader->getNode() ) {
@@ -364,6 +374,7 @@ class PMXI_Chunk {
 		$replacement = '$1_$2';
 		$feed        = preg_replace( $pattern, $replacement, $feed );
 
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		$is_replace_colons = apply_filters( 'wp_all_import_replace_colons_in_attribute_names', true );
 		if ( $is_replace_colons ) {
 			// pull out colons from attributes
@@ -377,6 +388,7 @@ class PMXI_Chunk {
 		$replacement = '$1_$2';
 		$feed        = preg_replace( $pattern, $replacement, $feed );
 
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		$is_preprocess_enabled = apply_filters( 'is_xml_preprocess_enabled', true );
 		if ( $is_preprocess_enabled ) {
 			// replace temporary word _ampersand_ back to & symbol
@@ -392,10 +404,12 @@ class PMXI_Chunk {
 
 }
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound
 class preprocessXml_filter extends php_user_filter {
 	#[\ReturnTypeWillChange]
 	public function filter( $in, $out, &$consumed, $closing ) {
 		while ( $bucket = stream_bucket_make_writeable( $in ) ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			$is_preprocess_enabled = apply_filters( 'is_xml_preprocess_enabled', true );
 			if ( $is_preprocess_enabled ) {
 				// the & symbol is not valid in XML, so replace it with temporary word _ampersand_

@@ -27,7 +27,7 @@ class PMXI_Admin_Partners extends PMXI_Controller_Admin {
 	 */
 	public function index() {
         echo '<div class="wrap">';
-        echo render_partner_discount_ui($this->get_partners(), [], $this->get_filters());
+        echo render_partner_discount_ui($this->get_partners(), [], $this->get_filters()); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Partner SDK returns pre-escaped HTML built via esc_html/esc_attr/esc_url internally.
         echo '</div>';
 	}	
 

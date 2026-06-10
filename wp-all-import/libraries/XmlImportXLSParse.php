@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.PHP.DevelopmentFunctions, WordPress.NamingConventions.PrefixAllGlobals
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\IReader;
@@ -148,13 +149,13 @@ class PMXI_XLSParser{
 		try {
 			// Create temporary directory
 			if (!mkdir($temp_dir, 0755, true)) {
-				throw new Exception("Could not create temporary directory");
+				throw new Exception(esc_html("Could not create temporary directory"));
 			}
 
 			// Extract Excel file (it's a ZIP archive)
 			$zip = new ZipArchive();
 			if ($zip->open($filename) !== TRUE) {
-				throw new Exception("Could not open Excel file as ZIP");
+				throw new Exception(esc_html("Could not open Excel file as ZIP"));
 			}
 
 			$zip->extractTo($temp_dir);
@@ -165,7 +166,7 @@ class PMXI_XLSParser{
 			$shared_strings_file = $temp_dir . '/xl/sharedStrings.xml';
 
 			if (!file_exists($worksheet_file)) {
-				throw new Exception("Could not find worksheet data");
+				throw new Exception(esc_html("Could not find worksheet data"));
 			}
 
 			// Parse shared strings

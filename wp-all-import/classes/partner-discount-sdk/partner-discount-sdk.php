@@ -9,6 +9,7 @@ if (!defined('ABSPATH')) {
 
 if (!class_exists('Soflyy_Partner_Discount')) {
 
+    // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound
     class Soflyy_Partner_Discount {
         const VERSION = '1.0.4';
         private $partners;
@@ -144,7 +145,7 @@ if (!class_exists('Soflyy_Partner_Discount')) {
                                                 </div>
                                             <?php else: ?>
                                                 <div class="soflyy_pd_sdk-partner-code">
-                                                    <div><?php echo $partner['code']; ?></div>
+                                                    <div><?php echo esc_html($partner['code']); ?></div>
                                                 </div>
                                             <?php endif; ?>
                                             <a class="soflyy_pd_sdk-claim-btn" href="<?php echo esc_url($partner['link']); ?>" target="_blank" rel="noopener">
@@ -167,6 +168,7 @@ if (!class_exists('Soflyy_Partner_Discount')) {
     add_action('wp_enqueue_scripts', ['Soflyy_Partner_Discount', 'enqueue_assets']);
     add_action('admin_enqueue_scripts', ['Soflyy_Partner_Discount', 'enqueue_assets']);
 
+    // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound
     function render_partner_discount_ui($partners = [], $css_variables = [], $filters = []) {
         $partner_ui = new Soflyy_Partner_Discount($partners, $css_variables, $filters);
         return $partner_ui->render();

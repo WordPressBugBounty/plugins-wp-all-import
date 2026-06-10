@@ -1,4 +1,6 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals
+if ( ! defined( 'ABSPATH' ) ) exit;
 if( !function_exists('wpai_wp_enqueue_code_editor')){
     function wpai_wp_enqueue_code_editor( $args ) {
 
@@ -77,6 +79,7 @@ if( !function_exists('wpai_wp_enqueue_code_editor')){
 if ( ! function_exists('pmxi_if') ) {
     function pmxi_if( $left_condition, $operand, $right_condition, $then, $else = '' ) {
         $str = trim(implode(' ', array($left_condition, html_entity_decode($operand), $right_condition)));
+        // phpcs:ignore Generic.PHP.ForbiddenFunctions.Found
         return (eval ("return ($str);")) ? $then : $else;
     }
 }
@@ -222,7 +225,7 @@ if ( ! function_exists('wp_all_import_get_absolute_path') ) {
 
 if ( ! function_exists('wp_all_import_clear_xss') ) {
     function wp_all_import_clear_xss( $str ) {
-        return stripslashes(esc_sql(htmlspecialchars(strip_tags($str))));
+        return stripslashes(esc_sql(htmlspecialchars(wp_strip_all_tags($str))));
     }
 }
 
@@ -252,7 +255,7 @@ if ( ! function_exists('wp_all_import_get_taxonomies') ) {
 
 if ( ! function_exists('wp_all_import_is_password_protected_feed') ) {
     function wp_all_import_is_password_protected_feed($url){
-        $url_data = parse_url($url);
+        $url_data = wp_parse_url($url);
         return (!empty($url_data['user']) and !empty($url_data['pass'])) ? true : false;
     }
 }
@@ -273,7 +276,7 @@ if ( ! function_exists('wp_all_import_basename') ) {
 if ( ! function_exists('wp_all_import_update_post_count') ) {
     function wp_all_import_update_post_count() {
         global $wpdb;
-        update_option( 'post_count', (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_status = 'publish' and post_type = 'post'" ), false );
+        update_option( 'post_count', (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_status = 'publish' and post_type = 'post'" ), false ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     }
 }
 
@@ -346,21 +349,21 @@ if (!function_exists('wp_all_import_delete_missing_notice')) {
                     if (empty($custom_type)){
                         $custom_type = new stdClass();
                         $custom_type->labels = new stdClass();
-                        $custom_type->labels->name = __('Taxonomy Terms', 'wp_all_import_plugin');
-                        $custom_type->labels->singular_name = __('Taxonomy Term', 'wp_all_import_plugin');
+                        $custom_type->labels->name = __('Taxonomy Terms', 'wp-all-import');
+                        $custom_type->labels->singular_name = __('Taxonomy Term', 'wp-all-import');
                     }
                     break;
                 case 'comments':
                     $custom_type = new stdClass();
                     $custom_type->labels = new stdClass();
-                    $custom_type->labels->name = __('Comments', 'wp_all_import_plugin');
-                    $custom_type->labels->singular_name = __('Comment', 'wp_all_import_plugin');
+                    $custom_type->labels->name = __('Comments', 'wp-all-import');
+                    $custom_type->labels->singular_name = __('Comment', 'wp-all-import');
                     break;
                 case 'woo_reviews':
                     $custom_type = new stdClass();
                     $custom_type->labels = new stdClass();
-                    $custom_type->labels->name = __('Reviews', 'wp_all_import_plugin');
-                    $custom_type->labels->singular_name = __('Review', 'wp_all_import_plugin');
+                    $custom_type->labels->name = __('Reviews', 'wp-all-import');
+                    $custom_type->labels->singular_name = __('Review', 'wp-all-import');
                     break;
                 default:
                     $custom_type = get_post_type_object( $options['custom_type'] );
@@ -369,29 +372,37 @@ if (!function_exists('wp_all_import_delete_missing_notice')) {
 
             if ($options['delete_missing_logic'] == 'all' && $options['delete_missing_action'] == 'keep' && !empty($options['is_change_post_status_of_removed'])) {
                 if( !empty($options['is_send_removed_to_trash']) ) {
-                    $notice = sprintf( __( '<span class="important-warning">Warning</span>: Any %s not in your import file will be sent to the trash, even those not created by this import.' ), $custom_type->labels->name);
+                    /* translators: see placeholders in the string below */
+                    $notice = sprintf( __( '<span class="important-warning">Warning</span>: Any %s not in your import file will be sent to the trash, even those not created by this import.', 'wp-all-import' ), $custom_type->labels->name);
                 }else{
-                    $notice = sprintf( __( '<span class="important-warning">Warning</span>: Any %s not in your import file will be marked as %s, even those not created by this import.' ), $custom_type->labels->name, $options['status_of_removed'] );
+                    /* translators: see placeholders in the string below */
+                    $notice = sprintf( __( '<span class="important-warning">Warning</span>: Any %1$s not in your import file will be marked as %2$s, even those not created by this import.', 'wp-all-import' ), $custom_type->labels->name, $options['status_of_removed'] );
                 }
             }
             if ($options['delete_missing_logic'] == 'import' && $options['delete_missing_action'] == 'keep' && !empty($options['is_send_removed_to_trash'])) {
-                $notice = sprintf(__('<span class="important-warning">Warning</span>: %s created by this import and no longer present in the import file will be sent to the trash.'), $custom_type->labels->name);
+                /* translators: see placeholders in the string below */
+                $notice = sprintf(__('<span class="important-warning">Warning</span>: %s created by this import and no longer present in the import file will be sent to the trash.', 'wp-all-import'), $custom_type->labels->name);
             }
             if ($options['delete_missing_logic'] == 'import' && $options['delete_missing_action'] == 'keep' && !empty($options['is_change_post_status_of_removed'])) {
                 if( !empty($options['is_send_removed_to_trash']) ) {
-                    $notice = sprintf( __( '<span class="important-warning">Warning</span>: %s created by this import and no longer present in the import file will be sent to the trash.' ), $custom_type->labels->name);
+                    /* translators: see placeholders in the string below */
+                    $notice = sprintf( __( '<span class="important-warning">Warning</span>: %s created by this import and no longer present in the import file will be sent to the trash.', 'wp-all-import' ), $custom_type->labels->name);
                 }else{
-                    $notice = sprintf( __( '<span class="important-warning">Warning</span>: %s created by this import and no longer present in the import file will be marked as %s.' ), $custom_type->labels->name, $options['status_of_removed'] );
+                    /* translators: see placeholders in the string below */
+                    $notice = sprintf( __( '<span class="important-warning">Warning</span>: %1$s created by this import and no longer present in the import file will be marked as %2$s.', 'wp-all-import' ), $custom_type->labels->name, $options['status_of_removed'] );
                 }
             }
             if ($options['delete_missing_logic'] == 'import' && $options['delete_missing_action'] == 'remove') {
-                $notice = sprintf(__('<span class="important-warning">Warning</span>: %s created by this import and no longer present in the import file will be <b>permanently deleted</b>.'), $custom_type->labels->name);
+                /* translators: see placeholders in the string below */
+                $notice = sprintf(__('<span class="important-warning">Warning</span>: %s created by this import and no longer present in the import file will be <b>permanently deleted</b>.', 'wp-all-import'), $custom_type->labels->name);
             }
             if ($options['delete_missing_logic'] == 'all' && $options['delete_missing_action'] == 'keep' && !empty($options['is_send_removed_to_trash'])) {
-                $notice = sprintf(__('<span class="important-warning">Warning</span>: Any %s not in your import file will be sent to the trash when this import runs. This includes %s that weren\'t created by this import.'), $custom_type->labels->name, $custom_type->labels->name);
+                /* translators: see placeholders in the string below */
+                $notice = sprintf(__('<span class="important-warning">Warning</span>: Any %1$s not in your import file will be sent to the trash when this import runs. This includes %2$s that weren\'t created by this import.', 'wp-all-import'), $custom_type->labels->name, $custom_type->labels->name);
             }
             if ($options['delete_missing_logic'] == 'all' && $options['delete_missing_action'] == 'remove') {
-                $notice = sprintf(__('<span class="important-warning">Warning</span>: Any %s not in your import file will be <b>permanently deleted</b>, even those not created by this import.'), $custom_type->labels->name);
+                /* translators: see placeholders in the string below */
+                $notice = sprintf(__('<span class="important-warning">Warning</span>: Any %s not in your import file will be <b>permanently deleted</b>, even those not created by this import.', 'wp-all-import'), $custom_type->labels->name);
             }
         }
         return $notice;
@@ -407,50 +418,50 @@ if (!function_exists('wp_all_import_custom_type_labels')) {
                 }
                 $custom_type = new stdClass();
                 $custom_type->name = $post_type;
-                $custom_type->label = empty($tx->labels->name) ? __('Taxonomy Terms', 'wp_all_import_plugin') : $tx->labels->name;
+                $custom_type->label = empty($tx->labels->name) ? __('Taxonomy Terms', 'wp-all-import') : $tx->labels->name;
                 $custom_type->labels = new stdClass();
-                $custom_type->labels->name = empty($tx->labels->name) ? __('Taxonomy Terms', 'wp_all_import_plugin') : $tx->labels->name;
-                $custom_type->labels->singular_name = empty($tx->labels->singular_name) ? __('Taxonomy Term', 'wp_all_import_plugin') : $tx->labels->singular_name;
+                $custom_type->labels->name = empty($tx->labels->name) ? __('Taxonomy Terms', 'wp-all-import') : $tx->labels->name;
+                $custom_type->labels->singular_name = empty($tx->labels->singular_name) ? __('Taxonomy Term', 'wp-all-import') : $tx->labels->singular_name;
                 break;
             case 'comments':
                 $custom_type = new stdClass();
                 $custom_type->name = $post_type;
-                $custom_type->label = __('Comments', 'wp_all_import_plugin');
+                $custom_type->label = __('Comments', 'wp-all-import');
                 $custom_type->labels = new stdClass();
-                $custom_type->labels->name = __('Comments', 'wp_all_import_plugin');
-                $custom_type->labels->singular_name = __('Comment', 'wp_all_import_plugin');
+                $custom_type->labels->name = __('Comments', 'wp-all-import');
+                $custom_type->labels->singular_name = __('Comment', 'wp-all-import');
                 break;
             case 'woo_reviews':
                 $custom_type = new stdClass();
                 $custom_type->name = $post_type;
-                $custom_type->label = __('WooCommerce Reviews', 'wp_all_import_plugin');
+                $custom_type->label = __('WooCommerce Reviews', 'wp-all-import');
                 $custom_type->labels = new stdClass();
-                $custom_type->labels->name = __('WooCommerce Reviews', 'wp_all_import_plugin');
-                $custom_type->labels->singular_name = __('Review', 'wp_all_import_plugin');
+                $custom_type->labels->name = __('WooCommerce Reviews', 'wp-all-import');
+                $custom_type->labels->singular_name = __('Review', 'wp-all-import');
                 break;
             case 'import_users':
                 $custom_type = new stdClass();
                 $custom_type->name = $post_type;
-                $custom_type->label = __('Users', 'wp_all_import_plugin');
+                $custom_type->label = __('Users', 'wp-all-import');
                 $custom_type->labels = new stdClass();
-                $custom_type->labels->name = __('Users', 'wp_all_import_plugin');
-                $custom_type->labels->singular_name = __('User', 'wp_all_import_plugin');
+                $custom_type->labels->name = __('Users', 'wp-all-import');
+                $custom_type->labels->singular_name = __('User', 'wp-all-import');
                 break;
             case 'gf_entries':
                 $custom_type = new stdClass();
                 $custom_type->name = $post_type;
-                $custom_type->label = __('Gravity Forms Entry', 'wp_all_import_plugin');
+                $custom_type->label = __('Gravity Forms Entry', 'wp-all-import');
                 $custom_type->labels = new stdClass();
-                $custom_type->labels->name = __('Gravity Forms Entry', 'wp_all_import_plugin');
-                $custom_type->labels->singular_name = __('Gravity Forms Entry', 'wp_all_import_plugin');
+                $custom_type->labels->name = __('Gravity Forms Entry', 'wp-all-import');
+                $custom_type->labels->singular_name = __('Gravity Forms Entry', 'wp-all-import');
                 break;
             case 'shop_customer':
                 $custom_type = new stdClass();
                 $custom_type->name = $post_type;
-                $custom_type->label = __('WooCommerce Customers', 'wp_all_import_plugin');
+                $custom_type->label = __('WooCommerce Customers', 'wp-all-import');
                 $custom_type->labels = new stdClass();
-                $custom_type->labels->name = __('WooCommerce Customers', 'wp_all_import_plugin');
-                $custom_type->labels->singular_name = __('WooCommerce Customer', 'wp_all_import_plugin');
+                $custom_type->labels->name = __('WooCommerce Customers', 'wp-all-import');
+                $custom_type->labels->singular_name = __('WooCommerce Customer', 'wp-all-import');
                 break;
             default:
                 $custom_type = get_post_type_object( $post_type );
@@ -465,6 +476,7 @@ if (!function_exists('wp_all_import_get_product_id_by_sku')) {
         global $wpdb;
 
         // phpcs:ignore WordPress.VIP.DirectDatabaseQuery.DirectQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $id = $wpdb->get_var(
             $wpdb->prepare(
                 "
@@ -472,7 +484,7 @@ if (!function_exists('wp_all_import_get_product_id_by_sku')) {
                     FROM {$wpdb->posts} as posts
                     INNER JOIN {$wpdb->wc_product_meta_lookup} AS lookup ON posts.ID = lookup.product_id
                     WHERE
-                    posts.post_type IN ( 'product', 'product_variation' )			
+                    posts.post_type IN ( 'product', 'product_variation' )
                     AND lookup.sku = %s
                     LIMIT 1
                     ",

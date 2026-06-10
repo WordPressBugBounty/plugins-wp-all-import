@@ -33,6 +33,7 @@ class ReviewLogic
     {
 
         // Only display on the Manage Imports page.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
         if($_GET['page'] !== 'pmxi-admin-manage' || isset($_GET['id']) ){
             return false;
         }
@@ -87,7 +88,8 @@ class ReviewLogic
 
             $dismissedModals = get_option('wpai_modal_review_dismissed_modals', []);
 
-            $dismissModalType = esc_html($_POST['modal_type']);
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $dismissModalType = esc_html(sanitize_text_field(wp_unslash($_POST['modal_type'] ?? '')));
 
             if(!is_array($dismissedModals)) {
                 $dismissedModals = [];
@@ -125,7 +127,8 @@ class ReviewLogic
 
         // Prettify the reviewed plugin.
         $plugin = 'Plugin Reviewed: ';
-        switch( $_POST['plugin'] ){
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        switch( sanitize_text_field(wp_unslash($_POST['plugin'] ?? '')) ){
             case 'wpai':
                 $plugin .= 'WP All Import';
                 break;
@@ -135,7 +138,8 @@ class ReviewLogic
                 break;
         }
 
-        $message = $plugin . " <br/><br/>" . $proInUse . wp_kses_post(stripslashes(wpautop($_POST['message'])));
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $message = $plugin . " <br/><br/>" . $proInUse . wp_kses_post(stripslashes(wpautop(sanitize_text_field(wp_unslash($_POST['message'] ?? '')))));
         wp_mail( self::MAILTO, self::SUBJECT, $message, $headers );
     }
 
@@ -227,6 +231,7 @@ class ReviewLogic
 
     private function hasImportsThatMatch(){
 
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $importsOlderThan48Hours = $this->wpdb->get_results("SELECT * FROM " . $this->wpdb->prefix . "pmxi_imports WHERE first_import < NOW() - INTERVAL 2 DAY AND first_import <> '0000-00-00 00:00:00' ");
 
         $imports = $this->getImports();
@@ -240,6 +245,7 @@ class ReviewLogic
     private function getImports()
     {
         if (!$this->imports) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $this->imports = $this->wpdb->get_results("SELECT * FROM " . $this->wpdb->prefix . "pmxi_imports");
         }
 

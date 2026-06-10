@@ -1,4 +1,6 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 function wp_all_import_is_title_required( $custom_type ) {
     $types_title_not_required = array('shop_order', 'import_users', 'shop_customer', 'comments', 'woo_reviews');

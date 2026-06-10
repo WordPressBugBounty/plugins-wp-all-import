@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * RapidAddon
  *
@@ -62,7 +63,7 @@ if (!class_exists('PMXI_RapidAddon')) {
 		function __construct($name, $slug) {
 			$this->name = $name;
 			$this->slug = $slug;
-			if (!empty($_GET['id'])){
+			if (!empty($_GET['id'])){ // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				$this->isWizard = false;
 			}
 		}
@@ -123,6 +124,7 @@ if (!class_exists('PMXI_RapidAddon')) {
 				$addon_active = true;
 			}
 
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			return apply_filters('rapid_is_active_add_on', $addon_active, $post_type, $this->slug);
 		}
 
@@ -415,7 +417,7 @@ if (!class_exists('PMXI_RapidAddon')) {
 			}
 
 			// Escaping is handled in 'helper_metabox_top' method.
-			echo $this->helper_metabox_top($this->name);
+			echo $this->helper_metabox_top($this->name); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Internal helper returns pre-escaped HTML.
 
 			$visible_fields = 0;
 
@@ -438,9 +440,10 @@ if (!class_exists('PMXI_RapidAddon')) {
 			}
 
 			// Static HTML is returned by method for display.
-			echo $this->helper_metabox_bottom();
+			echo $this->helper_metabox_bottom(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML string returned by internal helper.
 
 			if ( ! empty($this->image_sections) ){
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 				$is_images_section_enabled = apply_filters('wp_all_import_is_images_section_enabled', true, $post_type);
 				foreach ($this->image_sections as $k => $section) {
 					$section_options = array();
@@ -1018,7 +1021,7 @@ if (!class_exists('PMXI_RapidAddon')) {
 				}
 
 				foreach ($tmp_files as $file) { // remove all temporary files created
-					unlink($file);
+					wp_delete_file($file);
 				}
 
 			}
@@ -1074,6 +1077,7 @@ if (!class_exists('PMXI_RapidAddon')) {
 
 
 		function admin_notice_ignore() {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if (isset($_GET[$this->slug.'_ignore']) && '0' == $_GET[$this->slug.'_ignore'] ) {
 				update_option(\sanitize_key($this->slug).'_notice_ignore', 'true');
 			}

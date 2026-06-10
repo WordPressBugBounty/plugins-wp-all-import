@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 // Full-screen preview modal for Step 3 (Free Edition - Upgrade Notice Only)
 ?>
 
@@ -17,23 +18,23 @@
 			<div class="wpai-full-preview-tabs">
 				<button type="button" class="wpai-preview-tab" disabled>
 					<span class="dashicons dashicons-admin-post"></span>
-					<?php _e('WP Admin View', 'wp_all_import_plugin'); ?>
+					<?php esc_html_e('WP Admin View', 'wp-all-import'); ?>
 				</button>
 				<button type="button" class="wpai-preview-tab" disabled>
 					<span class="dashicons dashicons-visibility"></span>
-					<?php _e('Frontend View', 'wp_all_import_plugin'); ?>
+					<?php esc_html_e('Frontend View', 'wp-all-import'); ?>
 				</button>
 				<button type="button" class="wpai-preview-tab" disabled>
 					<span class="dashicons dashicons-admin-settings"></span>
-					<?php _e('Preview Settings', 'wp_all_import_plugin'); ?>
+					<?php esc_html_e('Preview Settings', 'wp-all-import'); ?>
 				</button>
 			</div>
 
 			<!-- Upgrade Notice -->
 			<div class="wpai-full-preview-content">
 				<div class="wpallimport-free-edition-notice" style="margin: 0; max-width: none; border-radius: 0; border-left: none; border-right: none; text-align: center;">
-					<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=preview-feature" target="_blank" class="upgrade_link"><?php _e('Upgrade to WP All Import Pro to Use the Preview Feature', 'wp_all_import_plugin');?></a>
-					<p><?php _e('If you already own it, remove the free edition and install the Pro edition.', 'wp_all_import_plugin'); ?></p>
+					<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=preview-feature" target="_blank" class="upgrade_link"><?php esc_html_e('Upgrade to WP All Import Pro to Use the Preview Feature', 'wp-all-import');?></a>
+					<p><?php esc_html_e('If you already own it, remove the free edition and install the Pro edition.', 'wp-all-import'); ?></p>
 				</div>
 			</div>
 		</div>

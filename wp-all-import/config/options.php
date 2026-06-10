@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 /**
  * List of plugin optins, contains only default values, actual values are stored in database
  * and can be changed by corresponding wordpress function calls
@@ -18,7 +19,7 @@ $config = array(
 	"dismiss_manage_bottom" => 0,
 	"html_entities" => 0,
 	"utf8_decode" => 0,
-	"cron_job_key" => wp_all_import_url_title(wp_all_import_rand_char(12)),
+	"cron_job_key" => '',
 	"chunk_size" => 32,
 	"pingbacks" => 1,
 	"legacy_special_character_handling" => 1,

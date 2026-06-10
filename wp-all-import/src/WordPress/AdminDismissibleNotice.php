@@ -2,6 +2,8 @@
 
 namespace Wpai\WordPress;
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 
 /**
  * Class AdminDismissibleNotice
@@ -28,10 +30,10 @@ class AdminDismissibleNotice extends AdminNotice {
 	 */
 	public function showNotice() {
 		?>
-		<div class="<?php echo $this->getType();?> wpallimport-dismissible" style="position: relative;" rel="wpai_dismiss_warnings_<?php echo $this->noticeId; ?>"><p>
-				<?php echo $this->message; ?>
+		<div class="<?php echo esc_attr($this->getType());?> wpallimport-dismissible" style="position: relative;" rel="wpai_dismiss_warnings_<?php echo esc_attr($this->noticeId); ?>"><p>
+				<?php echo wp_kses_post($this->message); ?>
 			</p>
-			<button class="notice-dismiss wpai-general-notice-dismiss" type="button" data-noticeId="<?php echo $this->noticeId; ?>"><span class="screen-reader-text">Dismiss this notice.</span></button>
+			<button class="notice-dismiss wpai-general-notice-dismiss" type="button" data-noticeId="<?php echo esc_attr($this->noticeId); ?>"><span class="screen-reader-text">Dismiss this notice.</span></button>
 		</div>
 		<?php
 	}

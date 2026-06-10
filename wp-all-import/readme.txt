@@ -1,9 +1,11 @@
 === WP All Import – Drag & Drop Import for CSV, XML, Excel & Google Sheets ===
 Contributors: soflyy, wpallimport
 Requires at least: 5.0
-Tested up to: 6.9
-Stable tag: 4.0.1
+Tested up to: 7.0
+Stable tag: 4.1.0
 Requires PHP: 7.4
+License: GPLv3
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Tags: wordpress csv import, wordpress xml import, xml, csv, datafeed
 
 Easily import any file of any size into any plugin, post type, custom field, or taxonomy. Supports WooCommerce, ACF, images, galleries, users, real estate listings, and more.
@@ -195,6 +197,11 @@ If you are using the free version of the plugin, you can obtain support through 
 4. Manage imports.
 
 == Changelog ==
+
+= 4.1.0 =
+* security improvement: hardening of database queries
+* improvement: ported new add-on API
+* API: pmxi_fire_hooks, pmxi_disabled_delete_missing_options, pmxi_hidden_delete_missing_options, pmxi_status_of_removed_options, pmxi_hidden_data_to_update_options
 
 = 4.0.1 =
 * security improvement: fixes CVE-2026-2830

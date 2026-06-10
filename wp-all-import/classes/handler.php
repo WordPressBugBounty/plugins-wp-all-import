@@ -37,7 +37,7 @@ class PMXI_Handler extends PMXI_Session {
 	 * @return boolean
 	 */
 	public function has_session() {
-		return isset( $_COOKIE[ $this->_cookie ] ) || $this->_has_cookie || is_user_logged_in();
+		return ( $this->_cookie !== null && isset( $_COOKIE[ $this->_cookie ] ) ) || $this->_has_cookie || is_user_logged_in();
 	}
 
 	/**
@@ -47,7 +47,9 @@ class PMXI_Handler extends PMXI_Session {
 	 * @return void
 	 */
 	public function set_session_expiration() {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		$this->_session_expiring    = time() + intval( apply_filters( 'wpallimport_session_expiring', 60 * 60 * 47 ) ); // 47 Hours
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		$this->_session_expiration  = time() + intval( apply_filters( 'wpallimport_session_expiration', 60 * 60 * 48 ) ); // 48 Hours
 	}
 
@@ -150,6 +152,7 @@ class PMXI_Handler extends PMXI_Session {
 
 		$now                = time();
 		$expired_sessions   = array();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpallimport_session_expires = $wpdb->get_results( $wpdb->prepare("SELECT option_name, option_value FROM $wpdb->options WHERE option_name LIKE %s", "_wpallimport_session_expires_" . $import_id . "_%") );
 
 		$expired_sessions[] = "_wpallimport_session_{$import_id}_"; // Session key
@@ -172,6 +175,7 @@ class PMXI_Handler extends PMXI_Session {
 
 			foreach ( $expired_sessions_chunked as $chunk ) {
 				$option_names = implode( "','", $chunk );
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
 				$wpdb->query( "DELETE FROM $wpdb->options WHERE option_name IN ('$option_names')" );
 			}
 		}

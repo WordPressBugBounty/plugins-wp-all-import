@@ -442,16 +442,11 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 
 		global $wpdb;
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-		$meta_key = sanitize_key($_POST['key']);
+		$meta_key = sanitize_text_field( wp_unslash( $_POST['key'] ) );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$r = $wpdb->get_results("
-			SELECT DISTINCT postmeta.meta_value
-			FROM ".$wpdb->postmeta." as postmeta
-			WHERE postmeta.meta_key='".$meta_key."' LIMIT 0,10
-		", ARRAY_A);
-		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$r = $wpdb->get_results($wpdb->prepare("SELECT DISTINCT postmeta.meta_value FROM {$wpdb->postmeta} as postmeta WHERE postmeta.meta_key = %s LIMIT 0,10", $meta_key), ARRAY_A);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$meta_values = array();
 		

@@ -3,11 +3,11 @@
         'name' => 'soflyy/wp-all-import',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'c473ba134d65dcbe566640a1c05790f0fc8427d8',
+        'reference' => '39b1f76f59e0bbc55289addf6e5dbbeca26202a4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         'composer/pcre' => array(
@@ -103,7 +103,7 @@
         'soflyy/wp-all-import' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'c473ba134d65dcbe566640a1c05790f0fc8427d8',
+            'reference' => '39b1f76f59e0bbc55289addf6e5dbbeca26202a4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

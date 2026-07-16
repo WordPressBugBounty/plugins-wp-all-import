@@ -2,7 +2,7 @@
 Contributors: soflyy, wpallimport
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 4.1.0
+Stable tag: 4.1.1
 Requires PHP: 7.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -197,6 +197,9 @@ If you are using the free version of the plugin, you can obtain support through 
 4. Manage imports.
 
 == Changelog ==
+
+= 4.1.1 =
+* security improvement: hardening of inline PHP execution restriction
 
 = 4.1.0 =
 * security improvement: hardening of database queries

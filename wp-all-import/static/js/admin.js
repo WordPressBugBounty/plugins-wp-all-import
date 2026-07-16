@@ -2713,8 +2713,11 @@
 
 	$(document).on('click', '.add-new-entry', function(e){
 		// Some "Add Another" links carry both classes; suppress the .add-new-key
-		// twin so the row isn't cloned twice.
-		e.stopImmediatePropagation();
+		// twin so the row isn't cloned twice. Only stop the dual-class case so
+		// pure .add-new-entry clicks still reach any other delegated handlers.
+		if ($(this).hasClass('add-new-key')) {
+			e.stopImmediatePropagation();
+		}
 		var $template = $(this).parents('table').first().children('tbody').children('tr.template');
 		$number = $(this).parents('table').first().children('tbody').children('tr').length - 2;
 		$clone = $template.clone(true);

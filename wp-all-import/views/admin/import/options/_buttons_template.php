@@ -13,7 +13,7 @@
 
 		<?php if (isset($source_type) and in_array($source_type, array('url', 'ftp', 'file'))): ?>
 			<!--input type="hidden" class="save_only" value="0" name="save_only"/-->
-			<input type="submit" name="save_only" class="button wpallimport-large-button" value="<?php esc_html_e('Save Only', 'wp-all-import') ?>" style="background:#425f9a;"/>
+			<input type="submit" name="save_only" class="button wpallimport-large-button" value="<?php esc_html_e('Save Only', 'wp-all-import') ?>" style="background-image:none !important;"/>
 		<?php endif ?>
 
 		<input type="submit" class="button wpallimport-large-button" value="<?php esc_html_e('Continue', 'wp-all-import') ?>" />		

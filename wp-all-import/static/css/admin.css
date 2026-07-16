@@ -252,6 +252,9 @@ body.wpallimport-plugin {
 	text-decoration: none;
 	cursor: pointer;
 }
+.wpallimport-plugin .wpallimport-submit-buttons .wpallimport-large-button{
+	margin-left: 5px;
+}
 .wpallimport-plugin .wpallimport-large-button:hover,
 .wpallimport-plugin .wpallimport-large-button:active,
 .wpallimport-plugin .wpallimport-large-button:focus{

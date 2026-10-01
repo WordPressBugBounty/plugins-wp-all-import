@@ -1,8 +1,8 @@
 === WP All Import – Drag & Drop Import for CSV, XML, Excel & Google Sheets ===
 Contributors: soflyy, wpallimport
 Requires at least: 5.0
-Tested up to: 7.0
-Stable tag: 4.1.1
+Tested up to: 7.1
+Stable tag: 4.1.2
 Requires PHP: 7.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -197,6 +197,13 @@ If you are using the free version of the plugin, you can obtain support through 
 4. Manage imports.
 
 == Changelog ==
+
+= 4.1.2 =
+* security improvement: update PhpSpreadsheet to 1.30.7
+* improvement: UI updates
+* bug fix: page number navigation was missing from Manage Imports and History Logs
+* bug fix: imported posts ignored the site's Default Post Category when the feed had no category value
+* bug fix: various PHP notices
 
 = 4.1.1 =
 * security improvement: hardening of inline PHP execution restriction

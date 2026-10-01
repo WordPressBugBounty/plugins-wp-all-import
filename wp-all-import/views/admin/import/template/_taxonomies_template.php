@@ -9,7 +9,7 @@ $post_taxonomies = array_diff_key(get_taxonomies_by_object_type($post['is_overri
 
 if ( ! empty($post_taxonomies)): 
 ?>
-	<div class="wpallimport-collapsed closed wpallimport-section">
+	<div class="wpallimport-collapsed <?php echo esc_attr( wp_all_import_section_class( 'taxonomies', $post ) ); ?> wpallimport-section">
 		<div class="wpallimport-content-section">
 			<div class="wpallimport-collapsed-header">
 				<h3><?php esc_html_e('Taxonomies, Categories, Tags','wp-all-import');?></h3>	

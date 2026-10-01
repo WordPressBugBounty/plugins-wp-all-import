@@ -44,17 +44,17 @@ $columns = array(
 	<div class="tablenav">
 		<div class="alignleft actions">
 			<select name="bulk-action">
-				<option value="" selected="selected"><?php esc_html_e('Bulk Actions', 'wp-all-import') ?></option>
+				<option value="" selected="selected"><?php esc_html_e('Bulk actions', 'wp-all-import') ?></option>
 				<option value="delete"><?php esc_html_e('Delete', 'wp-all-import') ?></option>
 			</select>
-			<input type="submit" value="<?php esc_attr_e('Apply', 'wp-all-import') ?>" name="doaction" id="doaction" class="button-secondary action" />
+			<input type="submit" value="<?php esc_attr_e('Apply', 'wp-all-import') ?>" name="doaction" id="doaction" class="button button-secondary action" />
 		</div>
 
 		<?php if ($page_links): ?>
 			<div class="tablenav-pages">
 				<?php $page_links_html = sprintf(
 					/* translators: 1: from number, 2: to number, 3: total count, 4: page links HTML */
-					'<span class="displaying-num">' . esc_html__('Displaying %1$s&#8211;%2$s of %3$s', 'wp-all-import') . '</span>%s',
+					'<span class="displaying-num">' . esc_html__('Displaying %1$s&#8211;%2$s of %3$s', 'wp-all-import') . '</span>%4$s',
 					esc_html(number_format_i18n(($pagenum - 1) * $perPage + 1)),
 					esc_html(number_format_i18n(min($pagenum * $perPage, $list->total()))),
 					esc_html(number_format_i18n($list->total())),
@@ -219,7 +219,7 @@ $columns = array(
 
 		<div class="alignleft actions">
 			<select name="bulk-action2">
-				<option value="" selected="selected"><?php esc_html_e('Bulk Actions', 'wp-all-import') ?></option>
+				<option value="" selected="selected"><?php esc_html_e('Bulk actions', 'wp-all-import') ?></option>
 				<?php if ( empty($type) or 'trash' != $type): ?>
 					<option value="delete"><?php esc_html_e('Delete', 'wp-all-import') ?></option>
 				<?php else: ?>
@@ -227,7 +227,7 @@ $columns = array(
 					<option value="delete"><?php esc_html_e('Delete Permanently', 'wp-all-import')?></option>
 				<?php endif ?>
 			</select>
-			<input type="submit" value="<?php esc_attr_e('Apply', 'wp-all-import') ?>" name="doaction2" id="doaction2" class="button-secondary action" />
+			<input type="submit" value="<?php esc_attr_e('Apply', 'wp-all-import') ?>" name="doaction2" id="doaction2" class="button button-secondary action" />
 		</div>
 	</div>
 	<div class="clear"></div>

@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 $custom_type = get_post_type_object( $post_type );
 ?>
 
-<div class="wpallimport-collapsed closed wpallimport-section ">
+<div class="wpallimport-collapsed <?php echo esc_attr( wp_all_import_section_class( 'other', $post ) ); ?> wpallimport-section ">
 	<div class="wpallimport-content-section ">
 		<div class="wpallimport-collapsed-header">
 			<h3><?php

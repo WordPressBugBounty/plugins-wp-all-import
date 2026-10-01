@@ -1,5 +1,5 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals ?>
-<div class="wpallimport-collapsed closed wpallimport-section wpallimport-featured-images">
+<div class="wpallimport-collapsed <?php echo esc_attr( wp_all_import_section_class( 'featured-image', $post, $section_slug ) ); ?> wpallimport-section wpallimport-featured-images">
 	<div class="wpallimport-content-section" style="padding-bottom: 0;">
 		<div class="wpallimport-collapsed-header" style="margin-bottom: 15px;">
 			<h3><?php echo esc_html($section_title);?></h3>	
@@ -105,7 +105,7 @@
 				</table>
 			</div>
 
-			<div class="wpallimport-collapsed closed wpallimport-section">
+			<div class="wpallimport-collapsed <?php echo esc_attr( wp_all_import_section_class( 'images-advanced', $post, $section_slug ) ); ?> wpallimport-section">
 				<div class="wpallimport-content-section rad0" style="margin:0; border-top:1px solid #ddd; border-bottom: none; border-right: none; border-left: none; background: #f1f2f2;">
 					<div class="wpallimport-collapsed-header">
 						<h3 style="color:#40acad;"><?php esc_html_e('SEO & Advanced Options','wp-all-import');?></h3>

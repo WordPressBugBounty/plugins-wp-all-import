@@ -44,6 +44,8 @@
 
 						<div class="clear"></div>
 
+						<?php do_action('pmxi_import_options_before'); ?>
+
 						<div class="wpallimport-import-types">
 							<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 							<?php if (empty($_GET['deligate'] ?? '')): ?>
@@ -189,7 +191,7 @@
                                 <div class="wpallimport-file-type-options">
                                     <span class="wpallimport-input-icon wpallimport-ftp-host-icon"></span>
                                     <input type="text" class="regular-text" name="ftp_host" value="<?php echo ( ! empty($post['ftp_host'])) ? esc_attr($post['ftp_host']) : ''; ?>" placeholder="<?php esc_attr_e('FTP server address', 'wp-all-import'); ?>"/>
-                                    <a class="wpallimport-help" href="#help" style="position: relative; top: -2px;" title="<?php esc_attr_e('The server address of your FTP/SFTP server. This can be an IP address or domain name. You do not need to include the connection protocol. For example, files.example.com or 127.0.0.1', 'wp-all-import'); ?>"?</a>
+                                    <a class="wpallimport-help" href="#help" style="position: relative; top: -2px;" title="<?php esc_attr_e('The server address of your FTP/SFTP server. This can be an IP address or domain name. You do not need to include the connection protocol. For example, files.example.com or 127.0.0.1', 'wp-all-import'); ?>">?</a>
                                 </div>
                                 <div class="wpallimport-file-type-options">
                                     <span class="wpallimport-input-icon wpallimport-ftp-port-icon"></span>
@@ -337,6 +339,11 @@
 											break;
 										}
 									}
+									if ( class_exists('WooCommerce') && ! post_type_exists('shop_customer') ) {
+										$custom_types['shop_customer'] = new stdClass();
+										$custom_types['shop_customer']->labels = new stdClass();
+										$custom_types['shop_customer']->labels->name = __('WooCommerce Customers', 'wp-all-import');
+									}
 									$order = array('shop_order', 'shop_coupon', 'shop_customer', 'product');
 									foreach ($order as $cpt){
 										if (!empty($custom_types[$cpt])) $sorted_cpt[$cpt] = $custom_types[$cpt];
@@ -470,10 +477,10 @@
                                             <p><?php esc_html_e('The WooCommerce Import Package is Required to Import Reviews', 'wp-all-import'); ?></p>
                                             <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-reviews" target="_blank" class="upgrade_link"><?php esc_html_e('Purchase the WooCommerce Import Package', 'wp-all-import');?></a>
                                         </div>
-                                        <?php if ( class_exists('WooCommerce') && ! class_exists('PMUI_Plugin') ): ?>
+                                        <?php if ( class_exists('WooCommerce') && ! post_type_exists('shop_customer') ): ?>
                                             <div class="wpallimport-upgrade-notice" rel="shop_customer">
-                                                <p><?php esc_html_e('The User Add-On is Required to Import Customers', 'wp-all-import'); ?></p>
-                                                <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users"><?php esc_html_e('Purchase the User Add-On', 'wp-all-import');?></a>
+                                                <p><?php esc_html_e('User Import Add-On Pro is required to import WooCommerce Customers.', 'wp-all-import'); ?></p>
+                                                <a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-customers" target="_blank" class="upgrade_link"><?php esc_html_e('Purchase User Import Add-On Pro', 'wp-all-import');?></a>
                                             </div>
                                         <?php endif; ?>
 

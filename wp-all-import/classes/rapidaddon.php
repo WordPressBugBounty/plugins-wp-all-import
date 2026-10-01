@@ -417,7 +417,7 @@ if (!class_exists('PMXI_RapidAddon')) {
 			}
 
 			// Escaping is handled in 'helper_metabox_top' method.
-			echo $this->helper_metabox_top($this->name); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Internal helper returns pre-escaped HTML.
+			echo $this->helper_metabox_top($this->name, ! $this->has_mapped_values($current_values)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Internal helper returns pre-escaped HTML.
 
 			$visible_fields = 0;
 
@@ -776,7 +776,45 @@ if (!class_exists('PMXI_RapidAddon')) {
 
 		}
 
-		function helper_metabox_top($name) {
+		/**
+		 * Whether this add-on holds values the user bound to their file.
+		 *
+		 * Only template tokens and filled XPath companions count. A non-empty test
+		 * would report a mapping on an untouched import: options_array() seeds every
+		 * enum field with its first choice, image and file fields always post a
+		 * download_image radio, and default_text round-trips into the saved options
+		 * through the wizard.
+		 */
+		function has_mapped_values($current_values) {
+
+			if (empty($current_values[$this->slug]) || !is_array($current_values[$this->slug])) {
+				return false;
+			}
+
+			if (!function_exists('wp_all_import_has_mapped_token')) {
+				return false;
+			}
+
+			$values = $current_values[$this->slug];
+			$xpaths = isset($values['xpaths']) ? $values['xpaths'] : array();
+
+			unset($values['mapping'], $values['xpaths']);
+
+			if (wp_all_import_has_mapped_token($values)) {
+				return TRUE;
+			}
+
+			// An enum field bound with "Set with XPath" stores its value here.
+			foreach ((array) $xpaths as $xpath) {
+				if (wp_all_import_is_mapped_value($xpath)) {
+					return TRUE;
+				}
+			}
+
+			return FALSE;
+		}
+
+		function helper_metabox_top($name, $closed = true) {
 
 			return '
 			<style type="text/css">
@@ -864,7 +902,7 @@ if (!class_exists('PMXI_RapidAddon')) {
   					margin: 45px 0 15px 0;
 				}
 			</style>
-			<div class="wpallimport-collapsed wpallimport-section wpallimport-addon '.\esc_attr($this->slug).' closed">
+			<div class="wpallimport-collapsed wpallimport-section wpallimport-addon '.\esc_attr($this->slug).' '.($closed ? 'closed' : '').'">
 				<div class="wpallimport-content-section">
 					<div class="wpallimport-collapsed-header">
 						<h3>'.\esc_html($name).'</h3>	

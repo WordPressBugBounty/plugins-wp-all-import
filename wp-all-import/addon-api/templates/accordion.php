@@ -1,6 +1,12 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <?php // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound ?>
-<div class="wpallimport-collapsed pmxi-addon <?php echo $addon->isAccordionClosed($type, $subtype) ? 'closed' : ''; ?>" data-addon="<?php echo esc_attr($addon->slug); ?>" data-type="<?php echo esc_attr($type); ?>" data-subtype="<?php echo esc_attr($subtype); ?>" data-nonce="<?php echo esc_attr(wp_create_nonce('wp_rest')) ?>">
+<?php
+// A saved mapping always wins; the add-on only gets to decide the empty case.
+$addon_has_mapping = function_exists( 'wp_all_import_has_mapped_token' )
+	&& wp_all_import_has_mapped_token( $importOptions[ $addon->slug ] ?? [] );
+$addon_closed = $addon_has_mapping ? false : $addon->isAccordionClosed( $type, $subtype );
+?>
+<div class="wpallimport-collapsed pmxi-addon <?php echo $addon_closed ? 'closed' : ''; ?>" data-addon="<?php echo esc_attr($addon->slug); ?>" data-type="<?php echo esc_attr($type); ?>" data-subtype="<?php echo esc_attr($subtype); ?>" data-nonce="<?php echo esc_attr(wp_create_nonce('wp_rest')) ?>">
     <div class="wpallimport-content-section">
         <div class="wpallimport-collapsed-header">
             <h3 data-test="toggle"><?php echo esc_html($addon->name()); ?></h3>

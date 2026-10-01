@@ -1,5 +1,5 @@
 .wpallimport-plugin textarea, 
-.wpallimport-plugin select, 
+.wpallimport-plugin select:not([name="bulk-action"]):not([name="bulk-action2"]),
 .wpallimport-plugin p:not(.soflyy_pd_sdk-section p), 
 .wpallimport-plugin .wp_attachment_details label[for="content"]{
 	font-size: 12px !important;

@@ -198,10 +198,10 @@
 									<?php endif; ?>
 
 
-									<?php if ( class_exists('WooCommerce') && ! class_exists('PMUI_Plugin') ): ?>
+									<?php if ( class_exists('WooCommerce') && ! post_type_exists('shop_customer') ): ?>
 										<div class="wpallimport-upgrade-notice" rel="shop_customer">
-											<p><?php esc_html_e('The User Add-On is Required to Import Customers', 'wp-all-import'); ?></p>
-											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link"><?php esc_html_e('Purchase the User Add-On', 'wp-all-import');?></a>
+											<p><?php esc_html_e('User Import Add-On Pro is required to import WooCommerce Customers.', 'wp-all-import'); ?></p>
+											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-customers" target="_blank" class="upgrade_link"><?php esc_html_e('Purchase User Import Add-On Pro', 'wp-all-import');?></a>
 										</div>
 									<?php endif; ?>
 
@@ -234,6 +234,8 @@
 										<p><?php esc_html_e('WP All Import Pro is Required to Import Taxonomies', 'wp-all-import'); ?></p>
 										<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839966&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-99&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-taxonomies" target="_blank" class="upgrade_link"><?php esc_html_e('Purchase WP All Import Pro', 'wp-all-import');?></a>
 									</div>
+
+									<?php do_action('wp_all_import_entity_type_bundle', $post, true); ?>
 
 								</div>
 								<?php endif; ?>

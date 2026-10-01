@@ -1,6 +1,6 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals ?>
 <?php $custom_type = get_post_type_object( $post_type ); ?>
-<div class="wpallimport-collapsed closed wpallimport-section wpallimport-custom-fields">
+<div class="wpallimport-collapsed <?php echo esc_attr( wp_all_import_section_class( 'custom-fields', $post ) ); ?> wpallimport-section wpallimport-custom-fields">
 	<div class="wpallimport-content-section">
 		<div class="wpallimport-collapsed-header">
 			<h3><?php esc_html_e('Custom Fields','wp-all-import');?></h3>	

@@ -22,13 +22,21 @@ function pmxi_admin_menu() {
 
 		$wpai_menu = apply_filters('pmxi_admin_menu', $wpai_menu);		
 
-		add_menu_page(__('WP All Import', 'wp-all-import'), __('All Import', 'wp-all-import'), PMXI_Plugin::$capabilities, 'pmxi-admin-home', array(PMXI_Plugin::getInstance(), 'adminDispatcher'), 'data:image/svg+xml;base64,' . $icon_base64, 112);
+		add_menu_page(__('WP All Import', 'wp-all-import'), __('All Import', 'wp-all-import'), PMXI_Plugin::$capabilities, 'pmxi-admin-home', array(PMXI_Plugin::getInstance(), 'adminDispatcher'), 'data:image/svg+xml;base64,' . $icon_base64, 111);
 		// workaround to rename 1st option to `Home`
 		$submenu['pmxi-admin-home'] = array();
 
 		foreach ($wpai_menu as $key => $value) {
-			add_submenu_page('pmxi-admin-home', $value[1], $value[1], PMXI_Plugin::$capabilities, $value[0], array(PMXI_Plugin::getInstance(), 'adminDispatcher'));	
+			add_submenu_page('pmxi-admin-home', $value[1], $value[1], PMXI_Plugin::$capabilities, $value[0], array(PMXI_Plugin::getInstance(), 'adminDispatcher'));
 		}
+
+		// Removed inside `submenu_file` so the page stays registered and
+		// `$parent_file` is already resolved, keeping the All Import menu
+		// expanded while viewing history logs.
+		add_filter('submenu_file', function ($submenu_file) {
+			remove_submenu_page('pmxi-admin-home', 'pmxi-admin-history');
+			return $submenu_file;
+		});
 		
 	}	
 }

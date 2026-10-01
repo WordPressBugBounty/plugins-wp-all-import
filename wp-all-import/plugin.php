@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 Plugin Name: WP All Import
 Plugin URI: https://www.wpallimport.com/wordpress-xml-csv-import/?utm_source=import-plugin-free&utm_medium=wp-plugins-page&utm_campaign=upgrade-to-pro
 Description: The most powerful solution for importing XML and CSV files to WordPress. Create Posts and Pages with content from any XML or CSV file. A paid upgrade to WP All Import Pro is available for support and additional features.
-Version: 4.1.1
+Version: 4.1.2
 Author: Soflyy
 Requires PHP: 7.4
 Text Domain: wp-all-import
@@ -31,7 +31,7 @@ define('WP_ALL_IMPORT_ROOT_URL', rtrim(plugin_dir_url(__FILE__), '/'));
  */
 define('WP_ALL_IMPORT_PREFIX', 'pmxi_');
 
-define('PMXI_VERSION', '4.1.1');
+define('PMXI_VERSION', '4.1.2');
 
 define('PMXI_EDITION', 'free');
 
@@ -605,6 +605,27 @@ final class PMXI_Plugin {
 	}
 
 	/**
+	 * A request value reduced to the lowercase string the dispatcher expects.
+	 *
+	 * page and action are read straight from the request and PMXI_Input returns
+	 * arrays as arrays, so ?page[]=x or ?action[]=x reached strtolower() as an
+	 * array. On PHP 8 that is an uncaught TypeError; on 7.4 it returns null.
+	 * admin_init is not confined to this plugin's screens — admin-ajax.php
+	 * fires it for logged-out requests too — so the fatal was reachable well
+	 * outside the pages the dispatcher below serves.
+	 *
+	 * An array is not a value the dispatcher can match, so it becomes '' and
+	 * no controller runs, which is what the 7.4 null already amounted to.
+	 *
+	 * @param mixed $value
+	 *
+	 * @return string
+	 */
+	private static function request_slug( $value ) {
+		return is_scalar( $value ) ? strtolower( (string) $value ) : '';
+	}
+
+	/**
 	 * pre-dispatching logic for admin page controllers
 	 */
 	public function adminInit() {
@@ -612,12 +633,12 @@ final class PMXI_Plugin {
 		self::$session = new PMXI_Handler();
 
 		$input = new PMXI_Input();
-		$page = strtolower($input->getpost('page', ''));
+		$page = self::request_slug($input->getpost('page', ''));
 
 		if (preg_match('%^' . preg_quote(str_replace('_', '-', self::PREFIX), '%') . '([\w-]+)$%', $page)) {
 			//$this->adminDispatcher($page, strtolower($input->getpost('action', 'index')));
 
-			$action = strtolower($input->getpost('action', 'index'));
+			$action = self::request_slug($input->getpost('action', 'index'));
 
 			// capitalize prefix and first letters of class name parts
 			$controllerName = preg_replace_callback('%(^' . preg_quote(self::PREFIX, '%') . '|_).%', array($this, "replace_callback"),str_replace('-', '_', $page));

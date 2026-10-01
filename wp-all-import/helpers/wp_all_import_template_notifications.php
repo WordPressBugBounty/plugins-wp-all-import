@@ -32,7 +32,7 @@ if ( ! function_exists('wp_all_import_template_notifications') )
 				$notifications[] = __('The import template you are using requires the User Add-On. If you continue without it your data may import incorrectly.<br/><br/><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users-template" target="_blank">Purchase the User Add-On</a>.', 'wp-all-import');						
 			}
 
-			if ( $post['custom_type'] == 'shop_customer' && ! class_exists('PMUI_Plugin') )
+			if ( $post['custom_type'] == 'shop_customer' && ! post_type_exists('shop_customer') )
 			{
 				$notifications[] = __('The import template you are using requires the User Add-On. If you continue without having this add-on active, your data may import incorrectly.<br/><br/><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users-template" target="_blank">Purchase the User Add-On</a>.', 'wp-all-import');
 			}

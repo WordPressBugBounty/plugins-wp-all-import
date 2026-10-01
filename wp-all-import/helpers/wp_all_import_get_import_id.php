@@ -39,6 +39,14 @@ if ( ! function_exists( 'wp_all_import_get_import_id' ) ) {
             }
         }
 
+        // Check session as fallback (for REST API context where GET params aren't set)
+        if ( $import_id == 'new' && ! empty( PMXI_Plugin::$session ) ) {
+            $session_import_id = PMXI_Plugin::$session->get('import_id');
+            if ( ! empty( $session_import_id ) && is_numeric( $session_import_id ) ) {
+                $import_id = $session_import_id;
+            }
+        }
+
         return $import_id;
     }
 }

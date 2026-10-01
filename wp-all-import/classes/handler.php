@@ -53,10 +53,33 @@ class PMXI_Handler extends PMXI_Session {
 		$this->_session_expiration  = time() + intval( apply_filters( 'wpallimport_session_expiration', 60 * 60 * 48 ) ); // 48 Hours
 	}
 
+	/**
+	 * Whether a value can stand in for an import id.
+	 *
+	 * PMXI_Input::applyFilters() recurses into arrays and returns them as
+	 * arrays, so whatever the request sent reaches an id intact — WooCommerce's
+	 * order list submits id[] when HPOS is on — and every caller below builds
+	 * an option name by concatenation.
+	 *
+	 * @param mixed $import_id
+	 *
+	 * @return bool
+	 */
+	public static function is_usable_import_id( $import_id ) {
+
+		return 'new' === $import_id
+			|| ( is_scalar( $import_id ) && ctype_digit( (string) $import_id ) );
+
+	}
+
 	public function generate_import_id() {
 
 		$input = new PMXI_Input();
 		$import_id = $input->get('id', 'new');
+
+		if ( ! self::is_usable_import_id( $import_id ) ) {
+			$import_id = 'new';
+		}
 
 		return $import_id;
 
@@ -149,6 +172,15 @@ class PMXI_Handler extends PMXI_Session {
 	public function clean_session( $import_id = 'new' ){
 
 		global $wpdb;
+
+		// Bail rather than fall back to 'new' the way generate_import_id()
+		// does. That default is a read there and a DELETE here: an id this
+		// method cannot use names no session, and treating it as 'new' would
+		// destroy the wizard session of whoever made the request. Callers pass
+		// the id straight from the request.
+		if ( ! self::is_usable_import_id( $import_id ) ) {
+			return;
+		}
 
 		$now                = time();
 		$expired_sessions   = array();

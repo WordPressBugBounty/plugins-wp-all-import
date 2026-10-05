@@ -54,7 +54,7 @@
 			$line_imgs = explode("\n", $featured_images);
 			if ( ! empty($line_imgs) )
 				foreach ($line_imgs as $line_img)
-					$imgs = array_merge($imgs, ( ! empty($featured_delim) ) ? str_getcsv($line_img, $featured_delim) : array($line_img) );					
+					$imgs = array_merge($imgs, ( ! empty($featured_delim) ) ? str_getcsv($line_img, $featured_delim, '"', '\\') : array($line_img) );					
 
 			$imgs = array_filter($imgs);
 			

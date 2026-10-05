@@ -1,8 +1,8 @@
 <?php
 // phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.PHP.DevelopmentFunctions, WordPress.NamingConventions.PrefixAllGlobals
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Reader\IReader;
+use Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\IOFactory;
+use Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Reader\IReader;
 
 class PMXI_XLSParser{
 
@@ -133,7 +133,7 @@ class PMXI_XLSParser{
 	 * Uses a more basic approach that avoids PhpSpreadsheet's memory issues
 	 *
 	 * @param string $filename Path to Excel file
-	 * @return \PhpOffice\PhpSpreadsheet\Spreadsheet
+	 * @return \Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Spreadsheet
 	 */
 	protected function load_excel_alternative_method($filename) {
 
@@ -206,7 +206,7 @@ class PMXI_XLSParser{
 	 * Uses PhpSpreadsheet with basic optimization
 	 *
 	 * @param string $filename Path to Excel file
-	 * @return \PhpOffice\PhpSpreadsheet\Spreadsheet
+	 * @return \Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Spreadsheet
 	 */
 	protected function load_excel_fallback_without_zip($filename) {
 

@@ -2821,7 +2821,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 										$line_imgs = explode("\n", $featured_images[$i]);
 										if ( ! empty($line_imgs) )
 											foreach ($line_imgs as $line_img)
-												$imgs = array_merge($imgs, ( ! empty($featured_delim) ) ? str_getcsv($line_img, $featured_delim) : array($line_img) );
+												$imgs = array_merge($imgs, ( ! empty($featured_delim) ) ? str_getcsv($line_img, $featured_delim, '"', '\\') : array($line_img) );
 
 										// keep existing and add newest images
 										if ( ! empty($articleData['ID']) and $this->options['is_update_images'] and $this->options['update_images_logic'] == "add_new" and $this->options['update_all_data'] == "no" and $is_show_add_new_images){
@@ -3319,7 +3319,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 									$line_imgs = explode("\n", $bundle_data['images'][$i]);
 									if ( ! empty($line_imgs) ){
                                         foreach ($line_imgs as $line_img){
-                                            $imgs = array_merge($imgs, ( ! empty($featured_delim) ) ? str_getcsv($line_img, $featured_delim) : array($line_img) );
+                                            $imgs = array_merge($imgs, ( ! empty($featured_delim) ) ? str_getcsv($line_img, $featured_delim, '"', '\\') : array($line_img) );
                                         }
                                     }
 
@@ -3377,7 +3377,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 
                                 if ("" == $attachment) continue;
 
-                                $atchs = str_getcsv($attachment, $this->options['atch_delim']);
+                                $atchs = str_getcsv($attachment, $this->options['atch_delim'], '"', '\\');
 
                                 if ( ! empty($atchs) ) {
 

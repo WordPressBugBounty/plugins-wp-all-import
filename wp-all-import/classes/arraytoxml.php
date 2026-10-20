@@ -11,7 +11,7 @@ class PMXI_ArrayToXML
     * @param SimpleXMLElement $xml - should only be used recursively
     * @return string XML
     */
-    public static function toXml($data, $rootNodeName = 'data', $xml=null, $lvl = 0)
+    public static function toXml($data, $rootNodeName = 'data', $xml=null, $lvl = 0, $keep_4byte_chars = false)
     {                
 
     	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
@@ -45,12 +45,15 @@ class PMXI_ArrayToXML
 	            {
 	                $node = $xml->addChild($key);
 	                // recrusive call.
-	                PMXI_ArrayToXML::toXml($value, $rootNodeName, $node, $lvl + 1);
+	                PMXI_ArrayToXML::toXml($value, $rootNodeName, $node, $lvl + 1, $keep_4byte_chars);
 	            }
 	            else
 	            {                
+	                // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+	                $filter_non_ascii_chars = apply_filters('wp_all_import_csv_to_xml_remove_non_ascii_characters', true);
+
 	                // add single node.
-	                $value =  htmlspecialchars(preg_replace('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $value));
+	                $value =  htmlspecialchars( $filter_non_ascii_chars ? PMXI_ParseOptions::remove_invalid_chars($value, $keep_4byte_chars) : (string) $value );
 	                $xml->addChild($key, $value);
 
 	            }

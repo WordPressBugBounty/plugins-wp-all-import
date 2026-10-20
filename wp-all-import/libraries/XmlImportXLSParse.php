@@ -14,9 +14,13 @@ class PMXI_XLSParser{
 
 	public $xml;
 
-	public function __construct($path, $targetDir = false){
+	public $keep_4byte_chars = false;
+
+	public function __construct($path, $targetDir = false, $keep_4byte_chars = false){
 
 		$this->_filename = $path;
+
+		$this->keep_4byte_chars = (bool) $keep_4byte_chars;
 
 		$wp_uploads = wp_upload_dir();
 
@@ -116,7 +120,8 @@ class PMXI_XLSParser{
 
         include_once(PMXI_Plugin::ROOT_DIR . '/libraries/XmlImportCsvParse.php');
 
-        $this->xml = new PMXI_CsvParser( array( 'filename' => $this->csv_path, 'targetDir' => $this->targetDir ) );
+        // Every path above writes this CSV as RFC 4180, so it is read without an escape character.
+        $this->xml = new PMXI_CsvParser( array( 'filename' => $this->csv_path, 'targetDir' => $this->targetDir, 'escape' => '', 'keep_4byte_chars' => $this->keep_4byte_chars ) );
 
         @unlink($this->csv_path);
 

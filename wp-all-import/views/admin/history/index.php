@@ -129,7 +129,7 @@ $columns = array(
 									<?php if ('0000-00-00 00:00:00' == $item['date']): ?>
 										<em>never</em>
 									<?php else: ?>
-										<?php echo esc_html(get_date_from_gmt($item['date'], "m/d/Y g:i a")); ?>
+										<?php echo esc_html(wp_all_import_local_date("m/d/Y g:i a", $item['date'])); ?>
 									<?php endif ?>
 								</td>
 								<?php

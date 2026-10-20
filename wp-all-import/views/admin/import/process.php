@@ -69,8 +69,12 @@
 		
 		<?php $custom_type = get_post_type_object( PMXI_Plugin::$session->options['custom_type'] ); ?>		
 
-		<div id="import_finished">			
+		<?php $csv_dialect = PMXI_Plugin::$session->get('csv_dialect'); ?>
+		<div id="import_finished" data-file-format="<?php echo esc_attr( (string) PMXI_Plugin::$session->get('file_format') ); ?>" data-csv-escape="<?php echo esc_attr( is_array( $csv_dialect ) && isset( $csv_dialect['telemetry'] ) ? $csv_dialect['telemetry'] : '' ); ?>">			
 			<h1><?php esc_html_e('Import Complete!', 'wp-all-import'); ?></h1>
+			<?php
+				do_action('pmxi_import_finished_notices', $update_previous);
+			?>
             <div class="wpallimport-content-section wpallimport-complete-statistics">
                 <?php /* translators: see placeholders in the string below */ ?>
                 <p><?php echo wp_kses( sprintf(__('All <b>%1$s</b> records from <b>%2$s</b> were successfully processed.', 'wp-all-import'), '<span class="processed_count"></span>', esc_html((PMXI_Plugin::$session->source['type'] != 'url') ? basename(PMXI_Plugin::$session->source['path']) : PMXI_Plugin::$session->source['path'])), array('b' => array(), 'span' => array('class' => array())) ); ?></p>

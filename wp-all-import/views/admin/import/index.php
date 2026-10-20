@@ -376,7 +376,11 @@
 
 
                                     <?php
-                                    $known_imgs     = array( 'post', 'page', 'product', 'import_users', 'shop_order', 'shop_coupon', 'shop_customer', 'users', 'comments', 'taxonomies', 'woo_reviews' );
+                                    $known_imgs     = array( 'post', 'page', 'import_users', 'users', 'comments', 'taxonomies' );
+                                    // The WooCommerce icons come from WooCommerce's icon font, which is not loaded without WooCommerce.
+                                    if ( class_exists( 'WooCommerce' ) ) {
+                                        $known_imgs = array_merge( $known_imgs, array( 'product', 'shop_order', 'shop_coupon', 'shop_customer', 'woo_reviews' ) );
+                                    }
                                     $all_posts      = array_merge( $sorted_cpt, $hidden_post_types );
                                     $all_posts      = apply_filters( 'pmxi_custom_types', $all_posts, 'all_types' );
                                     $ordered_posts  = array( 'post', 'page', 'product', 'shop_order', 'shop_coupon', 'woo_reviews', 'shop_customer', 'import_users', 'taxonomies', 'comments', 'gf_entries');

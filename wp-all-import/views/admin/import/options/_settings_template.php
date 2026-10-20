@@ -131,7 +131,11 @@
                                 ?>
 
                                     <?php
-                                    $known_imgs     = array( 'post', 'page', 'product', 'import_users', 'shop_order', 'shop_coupon', 'shop_customer', 'users', 'comments', 'taxonomies', 'woo_reviews' );
+                                    $known_imgs     = array( 'post', 'page', 'import_users', 'users', 'comments', 'taxonomies' );
+                                    // The WooCommerce icons come from WooCommerce's icon font, which is not loaded without WooCommerce.
+                                    if ( class_exists( 'WooCommerce' ) ) {
+                                        $known_imgs = array_merge( $known_imgs, array( 'product', 'shop_order', 'shop_coupon', 'shop_customer', 'woo_reviews' ) );
+                                    }
                                     $all_posts      = array_merge( $sorted_cpt, $hidden_post_types );
                                     $all_posts      = apply_filters( 'pmxi_custom_types', $all_posts, 'all_types' );
                                     $ordered_posts  = array( 'post', 'page', 'taxonomies', 'comments', 'import_users', 'shop_order', 'shop_coupon', 'product', 'woo_reviews', 'shop_customer' );
@@ -249,6 +253,16 @@
 								<div class="input">
 									<input type="text" name="delimiter" value="<?php echo esc_attr($post['delimiter']); ?>" style="width: 50px !important; font-size: 18px; color: #555; height: 50px; padding: 10px;"/>
 								</div>
+								<?php $csv_escape = PMXI_CsvDialect::mode_of($post); ?>
+								<h4><?php esc_html_e('CSV format', 'wp-all-import'); ?> <a href="#help" class="wpallimport-help" style="position:relative; top:0;" title="<?php esc_attr_e('How a quote that follows a backslash is read. Automatic checks the whole file on every run.', 'wp-all-import'); ?>">?</a></h4>
+								<div class="input wpallimport-csv-escape">
+									<input type="radio" id="csv_escape_auto" name="csv_escape" value="auto" <?php checked($csv_escape, 'auto'); ?>/>
+									<label for="csv_escape_auto"><?php esc_html_e('Automatic (recommended)', 'wp-all-import'); ?></label><br>
+									<input type="radio" id="csv_escape_rfc" name="csv_escape" value="rfc" <?php checked($csv_escape, 'rfc'); ?>/>
+									<label for="csv_escape_rfc"><?php esc_html_e('Standard (RFC 4180): Excel, Google Sheets, WooCommerce', 'wp-all-import'); ?></label><br>
+									<input type="radio" id="csv_escape_backslash" name="csv_escape" value="backslash" <?php checked($csv_escape, 'backslash'); ?>/>
+									<label for="csv_escape_backslash"><?php esc_html_e('Backslash-escaped (PHP): older WP All Export files, PHP scripts', 'wp-all-import'); ?></label>
+								</div>
 								<?php endif; ?>
 								<h4><?php esc_html_e('Downloads', 'wp-all-import'); ?></h4>
 
@@ -288,6 +302,11 @@
 									) ) ?>">?</a></label>
 								</div> 						
 							<?php endif; ?>
+							<div class="input">
+								<input type="hidden" name="keep_4byte_chars" value="0" />
+								<input type="checkbox" id="keep_4byte_chars" class="fix_checkbox" name="keep_4byte_chars" value="1" <?php echo ! empty($post['keep_4byte_chars']) ? 'checked="checked"': '' ?>/>
+								<label for="keep_4byte_chars"><?php esc_html_e('Keep emoji and other 4-byte characters', 'wp-all-import') ?> <a href="#help" class="wpallimport-help" style="position:relative; top:0;" title="<?php esc_attr_e('When off, they are replaced with a space. Turning this on for an existing import can change titles and other values used to match records, so the next run may create new records instead of updating them. Has no effect if the database tables cannot store these characters.', 'wp-all-import'); ?>">?</a></label>
+							</div>
 							<div class="input">
 								<input type="hidden" name="xml_reader_engine" value="0" />
 								

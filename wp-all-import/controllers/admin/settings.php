@@ -11,22 +11,372 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 
 	public static $upload_transient;
 
-	public function __construct(){	
+	/**
+	 * `tab` is preserved so save redirects land the user back on the tab they were editing.
+	 * @var array
+	 */
+	public $baseUrlParamNames = array('page', 'tab', 'pagenum', 'order', 'order_by', 'type', 's', 'f');
+
+	/**
+	 * The options exactly as they stood when this request began. save_options() measures
+	 * against this so a submission only writes the keys it actually changed.
+	 * @var array|null
+	 */
+	private $optionSnapshot = null;
+
+	/**
+	 * Tab slug => label. Order is the rendered order; the first one is the landing tab.
+	 */
+	public function get_tabs() {
+		return array(
+			'imports'   => __('Imports', 'wp-all-import'),
+			'cron'      => __('Cron', 'wp-all-import'),
+			'files'     => __('Files', 'wp-all-import'),
+			'templates' => __('Templates', 'wp-all-import'),
+			'functions' => __('Functions', 'wp-all-import'),
+			'support'   => __('Support', 'wp-all-import'),
+		);
+	}
+
+	protected function get_current_tab() {
+		$tabs = $this->get_tabs();
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$tab  = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+
+		return isset($tabs[$tab]) ? $tab : key($tabs);
+	}
+
+	/**
+	 * Rows contributed into the settings table via pmxi_settings_advanced. Captured so the
+	 * tab that hosts them can tell whether there is anything to show.
+	 */
+	protected function get_addon_settings($post) {
+		ob_start();
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		do_action('pmxi_settings_advanced', $post);
+
+		return $this->bind_contributed_labels(trim(ob_get_clean()));
+	}
+
+	/**
+	 * Binds a contributed form-table row's label and description to its control.
+	 *
+	 * Third-party sections arrive as markup we do not own: the row <label> is bound to
+	 * nothing and the description is referenced by nothing, so the control announces
+	 * without its group name and without its help text.
+	 *
+	 * @param  string $html
+	 * @return string
+	 */
+	protected function bind_contributed_labels($html) {
+		if ('' === $html || ! class_exists('DOMDocument')) {
+			return $html;
+		}
+
+		// libxml parses <script>/<textarea> bodies as markup and drops tags that appear
+		// inside JS strings. Bailing on the whole buffer would let one add-on's inline
+		// script silence binding for every other contributor on the same hook, so stash the
+		// bodies, parse, then put them back verbatim.
+		$stash = array();
+		// Unguessable per call: strtr() replaces blindly, so a fixed token appearing
+		// literally in contributed content would be overwritten with a script body.
+		$nonce = function_exists('wp_generate_password') ? wp_generate_password(12, false) : (string) wp_rand();
+		$html = preg_replace_callback(
+			// A quoted attribute may legitimately contain '>'. The run is possessive so the
+			// alternation can never be re-entered, and the trailing group is the last-resort
+			// path for an unbalanced quote: without it the tag does not match at all and the
+			// body is left unstashed, which is the failure this stash exists to avoid.
+			'%(<(script|textarea)\b(?:"[^"]*"|\'[^\']*\'|[^>"\'])*+(?:["\'][^>]*)?>)(.*?)(</\2>)%is',
+			function ($m) use (&$stash, $nonce) {
+				$token = 'WPAIBINDSTASH' . $nonce . count($stash) . 'X';
+				$stash[$token] = $m[3];
+
+				return $m[1] . $token . $m[4];
+			},
+			$html
+		);
+
+		$doc = new DOMDocument();
+		$previous = libxml_use_internal_errors(true);
+		$loaded = $doc->loadHTML(
+			'<?xml encoding="utf-8" ?><div id="wpai-bind-root">' . $html . '</div>',
+			LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+		);
+		libxml_clear_errors();
+		libxml_use_internal_errors($previous);
+
+		if ( ! $loaded) {
+			return $stash ? strtr($html, $stash) : $html;
+		}
+
+		$xpath = new DOMXPath($doc);
+
+		// A contributed section title is an h3, and it is restyled to be pixel-identical
+		// to the native h4 group titles, so the page shows one heading level and the
+		// accessibility tree reports another. Override the level rather than rewrite the
+		// tag: renaming a contributor's element is the corruption this whole method is
+		// careful to avoid.
+		foreach ($xpath->query('//h3[not(@aria-level)]') as $heading) {
+			$heading->setAttribute('role', 'heading');
+			$heading->setAttribute('aria-level', '4');
+		}
+
+		foreach ($xpath->query('//tr') as $row) {
+			$controls = $xpath->query('.//td//input[not(@type="hidden")] | .//td//select | .//td//textarea', $row);
+
+			if ($controls->length !== 1) {
+				continue;
+			}
+
+			$id = $controls->item(0)->getAttribute('id');
+
+			if ('' === $id) {
+				continue;
+			}
+
+			foreach ($xpath->query('.//th//label[not(@for)]', $row) as $label) {
+				$label->setAttribute('for', $id);
+			}
+
+			$descriptions = $xpath->query('.//td//p[contains(concat(" ", normalize-space(@class), " "), " description ")]', $row);
+			$tokens = preg_split('%\s+%', trim($controls->item(0)->getAttribute('aria-describedby')), -1, PREG_SPLIT_NO_EMPTY);
+			$index = 0;
+
+			foreach ($descriptions as $description) {
+				$descId = $description->getAttribute('id');
+
+				if ('' === $descId) {
+					$descId = $id . '-desc' . ($index ? '-' . $index : '');
+					$description->setAttribute('id', $descId);
+				}
+
+				// Append: an add-on may already point at a note of its own.
+				if ( ! in_array($descId, $tokens, true)) {
+					$tokens[] = $descId;
+				}
+
+				$index++;
+			}
+
+			if ($tokens) {
+				$controls->item(0)->setAttribute('aria-describedby', implode(' ', $tokens));
+			}
+		}
+
+		$root = $doc->getElementById('wpai-bind-root');
+
+		if ($root === null) {
+			return $stash ? strtr($html, $stash) : $html;
+		}
+
+		$out = '';
+		// An unbalanced close tag in one contributor's markup closes the wrapper early, so
+		// everything after it becomes a top-level sibling of the wrapper rather than a
+		// child. Emitting only the wrapper's children would delete every later contributor.
+		foreach ($doc->childNodes as $top) {
+			if ($top->nodeType === XML_PI_NODE) {
+				continue;
+			}
+			if ($top === $root) {
+				foreach ($top->childNodes as $child) {
+					$out .= $doc->saveHTML($child);
+				}
+			} else {
+				$out .= $doc->saveHTML($top);
+			}
+		}
+
+		return $stash ? strtr($out, $stash) : $out;
+	}
+
+	/**
+	 * wp_check_invalid_utf8()'s strip mode routes to iconv() without //IGNORE, which
+	 * returns false on PHP 8, so a bad byte erases the whole field rather than the
+	 * sequence. Sanitise here instead, so one plugin's header costs one character.
+	 */
+	protected function utf8_safe($value) {
+		$value = (string) $value;
+
+		if ('' === $value || (function_exists('mb_check_encoding') && mb_check_encoding($value, 'UTF-8'))) {
+			return $value;
+		}
+
+		if (function_exists('iconv')) {
+			$stripped = @iconv('UTF-8', 'UTF-8//IGNORE', $value);
+			if (false !== $stripped) {
+				return $stripped;
+			}
+		}
+
+		return preg_replace('/[\x80-\xFF]/', '', $value);
+	}
+
+	/**
+	 * Plain-text environment summary users can paste into a support ticket.
+	 */
+	protected function get_system_report() {
+		global $wp_version;
+
+		if ( ! function_exists('get_plugin_data')) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$theme  = wp_get_theme();
+		$active = array();
+		foreach ((array) get_option('active_plugins', array()) as $plugin) {
+			$data     = @get_plugin_data(WP_PLUGIN_DIR . '/' . $plugin, false, false);
+			$name     = $this->utf8_safe((string) (empty($data['Name']) ? $plugin : $data['Name']));
+			$version  = $this->utf8_safe((string) (empty($data['Version']) ? '' : $data['Version']));
+			$active[] = '' === $version ? $name : $name . ' ' . $version;
+		}
+		sort($active);
+
+		$server_limit  = $this->get_server_time_limit();
+		$wpai_override = (int) PMXI_Plugin::getInstance()->getOption('max_execution_time');
+
+		$lines = array(
+			'== WP All Import ==',
+			'WP All Import:      ' . PMXI_VERSION . (defined('PMXI_EDITION') ? ' (' . PMXI_EDITION . ')' : ''),
+			'PHP in mappings:    ' . (PMXI_Plugin::$is_php_allowed ? 'allowed' : 'blocked'),
+			'Secure mode:        ' . (PMXI_Plugin::getInstance()->getOption('secure') ? 'on' : 'off'),
+			'Chunk size:         ' . PMXI_Plugin::getInstance()->getOption('large_feed_limit'),
+			'',
+			'== Environment ==',
+			'WordPress:          ' . $wp_version . (is_multisite() ? ' (multisite)' : ''),
+			'Theme:              ' . $this->utf8_safe((string) $theme->get('Name')) . ' ' . $this->utf8_safe((string) $theme->get('Version')),
+			'PHP:                ' . PHP_VERSION,
+			'Memory limit:       ' . ini_get('memory_limit'),
+			'Max execution (server): ' . ($server_limit ? $server_limit . 's' : 'unlimited'),
+			'Max execution (WPAI):   ' . ($wpai_override ? $wpai_override . 's' : 'unlimited (WP All Import overrides the server on its own admin pages)'),
+			'Max upload size:    ' . size_format(wp_max_upload_size()),
+			// The two raw limits behind it: the computed figure never says which one a failed upload hit.
+			'Upload max filesize: ' . ini_get('upload_max_filesize'),
+			'Post max size:      ' . ini_get('post_max_size'),
+			// Truncates a large field mapping without reporting anything.
+			'Max input vars:     ' . ini_get('max_input_vars'),
+			'libxml:             ' . (defined('LIBXML_DOTTED_VERSION') ? LIBXML_DOTTED_VERSION : 'unknown'),
+			'Server:             ' . (empty($_SERVER['SERVER_SOFTWARE']) ? 'unknown' : $this->utf8_safe(sanitize_text_field(wp_unslash($_SERVER['SERVER_SOFTWARE'])))),
+			'MySQL:              ' . $this->utf8_safe((string) $this->get_db_version()),
+			'WP_DEBUG:           ' . (defined('WP_DEBUG') && WP_DEBUG ? 'on' : 'off'),
+			'',
+			'== Active plugins (' . count($active) . ') ==',
+		);
+
+		// esc_textarea() is htmlspecialchars() without ENT_SUBSTITUTE, so a single invalid
+		// byte anywhere in here returns '' for the entire report, with a Copy button that
+		// then copies nothing.
+		return $this->utf8_safe(implode("\n", array_merge($lines, $active)));
+	}
+
+	/**
+	 * Normalises a request-derived option array before it is stored.
+	 *
+	 * @param  array $post
+	 * @return array
+	 */
+	protected function normalise_saved_options($post) {
+		$stored = PMXI_Plugin::getInstance()->getOption();
+
+		// A crafted POST can turn a scalar option into an array (port[]=…), which then
+		// persists and fatals on every later read. Options that are legitimately arrays are
+		// left alone.
+		foreach ($post as $key => $value) {
+			if (is_scalar($value) || ! isset($stored[$key]) || is_array($stored[$key])) {
+				continue;
+			}
+
+			$post[$key] = $stored[$key];
+		}
+
+		// $_POST is all strings, so an untouched int option comes back as "5" against a
+		// stored 5. save_options() compares with !==, so each one would count as changed and
+		// every numeric option would be rewritten as a string on the first save.
+		foreach ($post as $key => $value) {
+			if (is_int($stored[$key] ?? null) && is_string($value) && is_numeric($value)
+				&& (string) (int) $value === $value) {
+				$post[$key] = (int) $value;
+			}
+		}
+
+		// No free form edits cron options, and Pro reads the same stored values.
+		foreach ($post as $key => $value) {
+			if (0 === strpos((string) $key, 'cron_') && array_key_exists($key, $stored)) {
+				$post[$key] = $stored[$key];
+			}
+		}
+
+		return $post;
+	}
+
+	/**
+	 * Persist the options this request actually changed, and nothing else.
+	 *
+	 * A form submission is a statement about the fields it carries; $post is $_POST laid
+	 * over every stored option, so writing it whole re-asserts values the request only
+	 * observed, including ones another request (a dismissal AJAX, say) wrote in between.
+	 *
+	 * @param  array $post
+	 * @return array the keys written
+	 */
+	protected function save_options($post) {
+		$snapshot = is_null($this->optionSnapshot)
+			? PMXI_Plugin::getInstance()->getOption()
+			: $this->optionSnapshot;
+
+		$changed = array();
+
+		foreach ((array) $post as $key => $value) {
+			if ( ! array_key_exists($key, $snapshot) or $snapshot[$key] !== $value) {
+				$changed[$key] = $value;
+			}
+		}
+
+		if ($changed) {
+			PMXI_Plugin::getInstance()->updateOption($changed);
+		}
+
+		return $changed;
+	}
+
+	/**
+	 * The server's real execution ceiling.
+	 *
+	 * ini_get() is useless here: plugin.php ini_set()s max_execution_time from its own
+	 * `max_execution_time` option (default 0 = unlimited) before any WPAI admin controller
+	 * runs, so ini_get reports our override rather than the server. get_cfg_var() reads
+	 * php.ini and is unaffected by ini_set. This matters because the override only applies
+	 * to WPAI admin pages. A real cron request comes in through wp-load.php and gets the
+	 * server value below.
+	 */
+	protected function get_server_time_limit() {
+		$cfg = get_cfg_var('max_execution_time');
+
+		return $cfg === false || $cfg === '' ? (int) ini_get('max_execution_time') : (int) $cfg;
+	}
+
+	protected function get_db_version() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		return $wpdb->get_var('SELECT VERSION()');
+	}
+
+	public function __construct(){
 
 		parent::__construct();
 
-		self::$upload_transient = 'pmxi_uploads_path';		
+		self::$upload_transient = 'pmxi_uploads_path';
 
-		$uploads = wp_upload_dir();	
+		$uploads = wp_upload_dir();
 
 		$is_secure_import = PMXI_Plugin::getInstance()->getOption('secure');
-		
+
 		if ( ! $is_secure_import ){
 
 			self::$path = wp_all_import_secure_file($uploads['basedir'] . DIRECTORY_SEPARATOR . PMXI_Plugin::UPLOADS_DIRECTORY );
-			
+
 		}
-		else {			
+		else {
 
 			self::$path = get_transient( self::$upload_transient );
 
@@ -35,39 +385,104 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 				set_transient( self::$upload_transient, self::$path);
 			}
 		}
-		
+
 		$sleep = apply_filters( 'wp_all_import_shard_delay', 0 );
 		usleep($sleep);
+
+		$this->enqueue_settings_assets();
 	}
-	
+
+	protected function enqueue_settings_assets() {
+
+		wp_enqueue_style('pmxi-settings-style', WP_ALL_IMPORT_ROOT_URL . '/static/css/settings.css', array('pmxi-admin-style'), PMXI_VERSION);
+		wp_enqueue_script('pmxi-settings-script', WP_ALL_IMPORT_ROOT_URL . '/static/js/settings.js', array('jquery'), PMXI_VERSION, true);
+
+		wp_localize_script('pmxi-settings-script', 'wpaiSettingsL10n', array(
+			'saving'            => __('Saving…', 'wp-all-import'),
+			'leaveWarning'      => __('You have unsaved changes that will be lost.', 'wp-all-import'),
+			'copied'            => __('Copied', 'wp-all-import'),
+			'copyFailed'        => __('Press Ctrl+C', 'wp-all-import'),
+			'confirm'           => __('Confirm', 'wp-all-import'),
+			'confirmTitle'      => __('Are you sure?', 'wp-all-import'),
+			'cancel'            => __('Cancel', 'wp-all-import'),
+		));
+	}
+
 	public function index() {
 
-		$this->data['post'] = $post = $this->input->post(PMXI_Plugin::getInstance()->getOption());		
-		
+		$this->optionSnapshot = PMXI_Plugin::getInstance()->getOption();
+		$this->data['post'] = $post = $this->input->post($this->optionSnapshot);
+
 		if ($this->input->post('is_settings_submitted')) { // save settings form
 			check_admin_referer('edit-settings', '_wpnonce_edit-settings');
-			
-			if ( ! preg_match('%^\d+$%', $post['history_file_count'])) {
-				$this->errors->add('form-validation', __('History File Count must be a non-negative integer', 'wp-all-import'));
-			}
-			if ( ! preg_match('%^\d+$%', $post['history_file_age'])) {
-				$this->errors->add('form-validation', __('History Age must be a non-negative integer', 'wp-all-import'));
-			}
+
 			if (empty($post['html_entities'])) $post['html_entities'] = 0;
 			if (empty($post['utf8_decode'])) $post['utf8_decode'] = 0;
-			
+
+			// min/max on the inputs is a convenience, not a guarantee. The same bounds
+			// have to hold for anything that posts directly.
+			$numeric_fields = array(
+				'large_feed_limit'           => array(__('Chunk size', 'wp-all-import'), 1, 100000),
+				'log_storage'                => array(__('Logs kept', 'wp-all-import'), 0, 1000),
+				'history_file_count'         => array(__('Import files kept', 'wp-all-import'), 0, 100000),
+				'history_file_age'           => array(__('Delete files older than', 'wp-all-import'), 0, 3650),
+				'port'                       => array(__('Custom port', 'wp-all-import'), 1, 65535),
+			);
+
+			foreach ($numeric_fields as $field => $spec) {
+				list($label, $min, $max) = $spec;
+
+				// Only the submitted tab's fields are in $_POST; the rest come from stored
+				// options. Validating those too means a value that was legal before these
+				// ranges existed blocks saving every other tab, naming a field that isn't
+				// on the page.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing
+				if ( ! isset($_POST[$field]) || ! is_scalar($post[$field])) {
+					continue;
+				}
+
+				$value = trim((string) $post[$field]);
+
+				if ('' === $value) {
+					continue;
+				}
+
+				if ( ! preg_match('%^\d+$%', $value)) {
+					/* translators: %s: name of the settings field */
+					$this->errors->add('form-validation', sprintf(__('%s must be a whole number, or left blank.', 'wp-all-import'), $label));
+					continue;
+				}
+
+				if ((int) $value < $min || (int) $value > $max) {
+					/* translators: 1: name of the settings field, 2: minimum value, 3: maximum value */
+					$this->errors->add('form-validation', sprintf(__('%1$s must be between %2$d and %3$d.', 'wp-all-import'), $label, $min, $max));
+				}
+			}
+
 			if ( ! $this->errors->get_error_codes()) { // no validation errors detected
 
-				PMXI_Plugin::getInstance()->updateOption($post);
+				$previous_port = (string) PMXI_Plugin::getInstance()->getOption('port');
 
-				if (!empty($this->data['addons']) && empty($_POST['pmxi_license_activate']) and empty($_POST['pmxi_license_deactivate'])) {
-					foreach ($this->data['addons'] as $class => $addon) {
-						$post['statuses'][$class] = $this->check_license($class);
-					}					
-					PMXI_Plugin::getInstance()->updateOption($post);
-				}				
+				$this->save_options($this->normalise_saved_options($post));
 
-				isset( $_POST['pmxi_license_activate'] ) and $this->activate_licenses();
+				// The base controller built baseUrl from the pre-save port, so a port change
+				// would redirect to the old address.
+				$new_port = isset($post['port']) ? (string) $post['port'] : '';
+				if ($new_port !== $previous_port) {
+					$parts = wp_parse_url($this->baseUrl);
+
+					if ( ! empty($parts['host'])) {
+						$site = wp_parse_url(site_url());
+						$fallback = ( ! empty($site['port']) && ! in_array((int) $site['port'], array(80, 443), true))
+							? ':' . (int) $site['port']
+							: '';
+
+						$this->baseUrl = $parts['scheme'] . '://' . $parts['host']
+							. ('' !== $new_port && is_numeric($new_port) ? ':' . (int) $new_port : $fallback)
+							. (isset($parts['path']) ? $parts['path'] : '')
+							. (isset($parts['query']) ? '?' . $parts['query'] : '');
+					}
+				}
 
 				$files = new PMXI_File_List(); $files->sweepHistory(); // adjust file history to new settings specified
 
@@ -75,14 +490,6 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 				wp_redirect(esc_url_raw(add_query_arg('pmxi_nt', urlencode(__('Settings saved', 'wp-all-import')), $this->baseUrl))); die();
 			}
 		}
-		/*else{			
-
-			foreach ($this->data['addons'] as $class => $addon) {
-				$post['statuses'][$class] = $this->check_license($class);
-			}								
-
-			PMXI_Plugin::getInstance()->updateOption($post);	
-		}*/
 
 		if ($this->input->post('is_templates_submitted')) { // delete templates form
 
@@ -182,7 +589,30 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 				}
 			}
 		}
-		
+
+		$this->data['tabs']        = $this->get_tabs();
+		$this->data['current_tab'] = $this->get_current_tab();
+		$this->data['tab_url']     = array();
+		foreach ($this->data['tabs'] as $slug => $label) {
+			$this->data['tab_url'][$slug] = add_query_arg('tab', $slug, admin_url('admin.php?page=pmxi-admin-settings'));
+		}
+
+		$this->data['post'] = $post;
+
+		$uploads = wp_upload_dir();
+		$this->data['functions_file'] = apply_filters(
+			'import_functions_file_path',
+			$uploads['basedir'] . DIRECTORY_SEPARATOR . WP_ALL_IMPORT_UPLOADS_BASE_DIRECTORY . DIRECTORY_SEPARATOR . 'functions.php'
+		);
+		$this->data['uploads_basedir'] = $uploads['basedir'] . DIRECTORY_SEPARATOR . WP_ALL_IMPORT_UPLOADS_BASE_DIRECTORY;
+
+		$this->data['addon_settings']    = $this->get_addon_settings($post);
+		// get_plugin_data() reads and parses every active plugin's header file. Only the
+		// Support tab shows the result, so the other five must not pay for it.
+		$this->data['system_report'] = 'support' === $this->data['current_tab']
+			? $this->get_system_report()
+			: '';
+
 		$this->render();
 	}
 
@@ -646,7 +1076,8 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 				}
 			}
 
-			$uploader = new PMXI_Upload($filePath, $errors, rtrim(str_replace(basename($filePath), '', $filePath), '/'));
+			$parse_options = PMXI_ParseOptions::for_import_id($this->input->get('id', 0));
+			$uploader = new PMXI_Upload($filePath, $errors, rtrim(str_replace(basename($filePath), '', $filePath), '/'), null === $parse_options ? PMXI_ParseOptions::for_new_import() : $parse_options);
 
 			$upload_result = $uploader->upload();
 			
@@ -738,8 +1169,8 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 							if ( ! class_exists('WooCommerce') ) {
 								$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires WooCommerce.</p><a class="upgrade_link" href="https://wordpress.org/plugins/woocommerce/" target="_blank">Get WooCommerce</a>.', 'wp-all-import');
 							}
-							elseif ( ! class_exists('PMUI_Plugin') ) {
-								$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the User Add-On.</p><p class="wpallimport-upgrade-links-container"><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-users" target="_blank" class="upgrade_link">Purchase the User Add-On</a></p>', 'wp-all-import');
+							elseif ( ! post_type_exists('shop_customer') ) {
+								$notice = __('<p class="wpallimport-bundle-notice">User Import Add-On Pro is required to import WooCommerce Customers.</p><p class="wpallimport-upgrade-links-container"><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839963&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-customers" target="_blank" class="upgrade_link">Purchase User Import Add-On Pro</a></p>', 'wp-all-import');
 							}
 
 							break;

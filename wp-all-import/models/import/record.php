@@ -88,6 +88,40 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 		$this->errors = new WP_Error();
 	}
 
+	/**
+	 * Every import created from now on reads CSV with Automatic and keeps 4-byte characters,
+	 * unless whatever created it chose otherwise.
+	 */
+	public function insert() {
+		$options = $this->offsetExists('options') ? $this['options'] : array();
+		if ( is_array($options) ) {
+			$this['options'] = PMXI_ParseOptions::stamp_new_import($options);
+		}
+		return parent::insert();
+	}
+
+	public function set($field, $value = NULL) {
+		$previous = $this->offsetExists('options') ? $this['options'] : null;
+		parent::set($field, $value);
+		if ( is_array($previous) && $this->offsetExists('options') && is_array($this['options']) ) {
+			$this['options'] = PMXI_ParseOptions::carry_over($previous, $this['options']);
+		}
+		return $this;
+	}
+
+	public function log_parse_notes($logger, $upload_result) {
+		if ( ! $logger || ! is_array($upload_result) ) {
+			return;
+		}
+		$messages = PMXI_ParseOptions::log_messages(isset($upload_result['csv_dialect']) ? $upload_result['csv_dialect'] : null);
+		if ( PMXI_ParseOptions::keep_requested($this->options) && ! PMXI_ParseOptions::database_supports_4byte() ) {
+			$messages[] = PMXI_ParseOptions::keep_skipped_message();
+		}
+		foreach ($messages as $message) {
+			call_user_func($logger, $message);
+		}
+	}
+
     /**
      * Import all files matched by path
      * @param callback[optional] $logger Method where progress messages are submmitted
@@ -111,7 +145,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                     if ($this->type == 'ftp'){
                         try {
                             $files = PMXI_FTPFetcher::fetch($this->options);
-                            $uploader = new PMXI_Upload($files[0], $this->errors, rtrim(str_replace(basename($files[0]), '', $files[0]), '/'));
+                            $uploader = new PMXI_Upload($files[0], $this->errors, rtrim(str_replace(basename($files[0]), '', $files[0]), '/'), $this->options);
                             $upload_result = $uploader->upload();
                         } catch (Exception $e) {
                             $this->errors->add('form-validation', $e->getMessage());
@@ -126,18 +160,19 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                         if ( ! empty($filePaths) and is_array($filePaths) ) {
                             $file_to_import = array_shift($filePaths);
                         }
-                        $uploader = new PMXI_Upload(trim($file_to_import), $this->errors);
+                        $uploader = new PMXI_Upload(trim($file_to_import), $this->errors, false, $this->options);
                         $upload_result = $uploader->url($this->feed_type, $this->path);
                     } elseif ( $this->type == 'file') {
-                        $uploader = new PMXI_Upload(trim($this->path), $this->errors);
-                        $upload_result = $uploader->file();
+                        // Pro writes this type, and such a record outlives a switch to free, which has no file() to serve it.
+                        $this->errors->add('form-validation', __('Using existing files is not supported in the free edition. Please upgrade to Pro to use this feature.', 'wp-all-import'));
                     } else { // retrieve already uploaded file
-                        $uploader = new PMXI_Upload(trim($this->path), $this->errors, rtrim(str_replace(wp_all_import_basename($this->path), '', $this->path), '/'));
+                        $uploader = new PMXI_Upload(trim($this->path), $this->errors, rtrim(str_replace(wp_all_import_basename($this->path), '', $this->path), '/'), $this->options);
                         $upload_result = $uploader->upload();
                     }
 
                     if (!count($this->errors->errors)) {
                         $filePath  = $upload_result['filePath'];
+                        $this->log_parse_notes($logger, $upload_result);
                     }
 
                     if ( ! $this->errors->get_error_codes() and "" != $filePath ) {
@@ -192,7 +227,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 
                         // wp_all_import_get_reader_engine( array($filePath), array('root_element' => $this->root_element), $this->id );
 
-                        $file = new PMXI_Chunk($filePath, array('element' => $this->root_element, 'encoding' => $this->options['encoding']));
+                        $file = new PMXI_Chunk($filePath, array('element' => $this->root_element, 'encoding' => $this->options['encoding'], 'keep_4byte_chars' => PMXI_ParseOptions::keep_4byte_chars($this->options)));
 
                         // chunks counting
                         $chunks = 0; $history_xml = '';
@@ -313,7 +348,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                             $progress = \WP_CLI\Utils\make_progress_bar( 'Importing ' . $custom_type->labels->name, $records_to_import );
                         }
                         if ( (int) $this->imported + (int) $this->skipped <= (int) $records_to_import ) {
-                            $file = new PMXI_Chunk($filePath, array('element' => $this->root_element, 'encoding' => $this->options['encoding'], 'pointer' => $this->queue_chunk_number));
+                            $file = new PMXI_Chunk($filePath, array('element' => $this->root_element, 'encoding' => $this->options['encoding'], 'pointer' => $this->queue_chunk_number, 'keep_4byte_chars' => PMXI_ParseOptions::keep_4byte_chars($this->options)));
                             $feed = "<?xml version=\"1.0\" encoding=\"". $this->options['encoding'] ."\"?>" . "\n" . "<pmxi_records>";
                             $loop = 0;
                             $chunk_number = $this->queue_chunk_number;
@@ -832,7 +867,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 
             //set_error_handler( array($errorHandler, 'parse_data_handler'), E_ALL | E_STRICT | E_WARNING );
 
-            $chunk == 1 and $logger and printf("<div class='progress-msg'>%s</div>\n", esc_html(gmdate("r"))) and flush();
+            $chunk == 1 and $logger and printf("<div class='progress-msg'>%s</div>\n", esc_html(wp_all_import_local_date("r"))) and flush();
 
             $chunk == 1 and $logger and call_user_func($logger, __('Composing titles...', 'wp-all-import'));
 			if ( ! empty($this->options['title'])){
@@ -2922,7 +2957,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 												$bn  = wp_all_import_sanitize_filename(urldecode(wp_all_import_basename($url)));
                                                 $default_extension = pmxi_getExtension($bn);
 
-												if ( "yes" == $this->options[$option_slug . 'download_images'] and ! empty($auto_extensions_bundle[$slug][$i]) and preg_match('%^(jpg|jpeg|png|gif|webp)$%i', $auto_extensions_bundle[$slug][$i])){
+												if ( "yes" == $this->options[$option_slug . 'download_images'] and ! empty($auto_extensions_bundle[$slug][$i]) and preg_match('%^(' . wp_all_import_supported_image_extensions() . ')$%i', $auto_extensions_bundle[$slug][$i])){
 													$img_ext = $auto_extensions_bundle[$slug][$i];
 												}
 												else {
@@ -3627,7 +3662,8 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                                                     $term_name = wp_unslash( $term_args['name'] );
                                                     $term_slug = sanitize_title( $term_name );
                                                     $term_slug = pmxi_truncate_term_slug($term_slug);
-                                                    $term = (empty($this->options['tax_is_full_search_' . $this->options['tax_logic'][$tx_name]][$tx_name])) ? is_exists_term($term_slug, $tx_name, (int)$parent_id) : is_exists_term($term_slug, $tx_name);
+                                                    $slug_only = PMXI_ParseOptions::keep_requested($this->options);
+                                                    $term = (empty($this->options['tax_is_full_search_' . $this->options['tax_logic'][$tx_name]][$tx_name])) ? is_exists_term($term_slug, $tx_name, (int)$parent_id, $slug_only) : is_exists_term($term_slug, $tx_name, null, $slug_only);
 													if( empty($this->options['do_not_create_terms']) && empty($term) && !is_wp_error($term) ) {
                                                         $term_attr = array('parent' => (!empty($parent_id)) ? $parent_id : 0);
                                                         $term = wp_insert_term(
@@ -3880,12 +3916,12 @@ class PMXI_Import_Record extends PMXI_Model_Record {
             wp_delete_file($image_filepath); // delete file since failed upload may result in empty file created
         } else {
             if ($type == 'images') {
-                if ( preg_match('%\W(svg)$%i', wp_all_import_basename($image_filepath)) or $file_info = apply_filters('pmxi_getimagesize', @getimagesize($image_filepath), $image_filepath) and in_array($file_info[2], wp_all_import_supported_image_types())) {
+                $is_svg = preg_match('%\W(svg)$%i', wp_all_import_basename($image_filepath));
+                // get_file_curl() already sanitized a successful download; the fallback fetch above did not.
+                $is_clean_svg = $is_svg && ( ! ( is_wp_error($request) || $request === false ) || false !== wp_all_import_sanitize_svg( $image_filepath ) );
+                if ( $is_clean_svg or ! $is_svg and $file_info = apply_filters('pmxi_getimagesize', @getimagesize($image_filepath), $image_filepath) and in_array($file_info[2], wp_all_import_supported_image_types())) {
                     $downloaded = true;
-                    if (preg_match('%\W(svg)$%i', wp_all_import_basename($image_filepath))){
-	                    if ( (is_wp_error($request) or $request === false)) {
-		                    wp_all_import_sanitize_svg( $image_filepath );
-	                    }
+                    if ($is_svg){
                         $file_info = true;
                     }
                     /* translators: see placeholders in the string below */

@@ -2997,7 +2997,74 @@
 	});
 
 	if ($('#wp_all_import_code').length){
-		var editor = wp.codeEditor.initialize($('#wp_all_import_code'), wpai_cm_settings);
+		// configureTabbing() reads these off the RAW settings object rather than the merged
+		// defaults, so they never arrive unless the caller supplies them — core's own two
+		// callers always do. They are not advisory: core calls the handler and THEN
+		// preventDefault()s the Tab, so the handler is the only thing that can move focus.
+		// A no-op therefore cancels the Tab with nothing to replace it and traps the user.
+		function wpaiCmTabOut(forward) {
+			var wrapper = editor && editor.codemirror ? editor.codemirror.getWrapperElement() : null;
+
+			if (!wrapper) {
+				return;
+			}
+
+			var outside = $('a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+				.filter(function () {
+					return !wrapper.contains(this);
+				})
+				.filter(function () {
+					var where = wrapper.compareDocumentPosition(this);
+
+					return forward
+						? !!(where & Node.DOCUMENT_POSITION_FOLLOWING)
+						: !!(where & Node.DOCUMENT_POSITION_PRECEDING);
+				})
+				.toArray();
+
+			if ( ! forward) {
+				outside.reverse();
+			}
+
+			// Try each in turn rather than predicting which one will take focus.
+			// display:none, visibility:hidden, content-visibility and an inert ancestor
+			// all refuse focus by different rules, and core cancels the Tab regardless —
+			// so a target that silently declines leaves the user stuck in the editor.
+			// Testing the outcome also keeps deliberately off-screen but focusable things
+			// (skip links, .screen-reader-text) working, which a visibility heuristic
+			// would wrongly skip.
+			for (var i = 0; i < outside.length; i++) {
+				outside[i].focus();
+
+				if (document.activeElement === outside[i]) {
+					return;
+				}
+			}
+		}
+
+		var wpaiCmSettings = $.extend({}, wpai_cm_settings, {
+			onTabNext: function () { wpaiCmTabOut(true); },
+			onTabPrevious: function () { wpaiCmTabOut(false); }
+		});
+
+		var editor = wp.codeEditor.initialize($('#wp_all_import_code'), wpaiCmSettings);
+
+		// CodeMirror hides the source textarea, so any label on it never reaches the
+		// accessibility tree. Move the name onto the element that actually takes focus,
+		// and point at the note explaining how to tab back out.
+		var wpaiCmInput = editor.codemirror.getInputField();
+		if (wpaiCmInput) {
+			var wpaiCmLabel = $('#wp_all_import_code').attr('aria-label');
+			wpaiCmInput.setAttribute('role', 'textbox');
+			wpaiCmInput.setAttribute('aria-multiline', 'true');
+			if (wpaiCmLabel) {
+				wpaiCmInput.setAttribute('aria-label', wpaiCmLabel);
+			}
+			if (document.getElementById('wpai-cm-escape-help')) {
+				wpaiCmInput.setAttribute('aria-describedby', 'wpai-cm-escape-help');
+			}
+		}
+
 	    editor.codemirror.setCursor(1);
 	    $('.CodeMirror').resizable({
 		  resize: function() {

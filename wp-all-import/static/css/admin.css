@@ -1059,9 +1059,6 @@ body.wpallimport-plugin {
 .wpallimport-plugin .ui-tabs-hide{
 	display: none !important;
 }
-.wpallimport-plugin .button-primary:hover{
-	font-weight: normal;
-}
 .wpallimport-plugin .hndle{
 	padding: 7px;
 	margin-bottom: 0px;
@@ -4499,3 +4496,12 @@ body.rtl.wpallimport-plugin .show_hints
 
 
 
+
+/* The function editor traps Tab (it indents), so the way out has to be visible, not
+   screen-reader-only. Lives here because the editor renders on the settings screen and
+   in the import wizard, which do not share a stylesheet. */
+.wpallimport-plugin .wpai-cm-escape-help {
+	margin: 0 0 6px;
+	line-height: 1.6;
+	color: #646970;
+}

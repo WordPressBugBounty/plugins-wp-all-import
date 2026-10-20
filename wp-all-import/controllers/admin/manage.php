@@ -410,7 +410,7 @@ class PMXI_Admin_Manage extends PMXI_Controller_Admin {
 
 				if ( in_array($item->type, array('upload'))){ // retrieve already uploaded file
 
-					$uploader = new PMXI_Upload(trim($item->path), $this->errors, rtrim(str_replace(basename($item->path), '', wp_all_import_get_absolute_path($item->path)), '/'));
+					$uploader = new PMXI_Upload(trim($item->path), $this->errors, rtrim(str_replace(basename($item->path), '', wp_all_import_get_absolute_path($item->path)), '/'), $item->options);
 					$upload_result = $uploader->upload();
 					if ($upload_result instanceof WP_Error)
 						$this->errors = $upload_result;
@@ -440,7 +440,7 @@ class PMXI_Admin_Manage extends PMXI_Controller_Admin {
 					}
 					else{
 
-						$file = new PMXI_Chunk($path, array('element' => $item->root_element, 'encoding' => $item->options['encoding']));
+						$file = new PMXI_Chunk($path, array('element' => $item->root_element, 'encoding' => $item->options['encoding'], 'keep_4byte_chars' => PMXI_ParseOptions::keep_4byte_chars($item->options)));
 
 					    while ($xml = $file->read()) {
 
@@ -508,7 +508,10 @@ class PMXI_Admin_Manage extends PMXI_Controller_Admin {
 						'local_paths' => (!empty($local_paths)) ? $local_paths : array(), // ftp import local copies of remote files
 						'action' => (!empty($action_type) and $action_type == 'continue') ? 'continue' : 'update',
 						'nonce' => wp_create_nonce( 'import' ),
-						'deligate' => false
+						'deligate' => false,
+						'file_format' => isset($upload_result) && is_array($upload_result) && isset($upload_result['file_format']) ? $upload_result['file_format'] : '',
+						'csv_dialect' => isset($upload_result) && is_array($upload_result) && isset($upload_result['csv_dialect']) ? $upload_result['csv_dialect'] : null,
+						'parse_notes' => PMXI_Admin_Import::parse_notes($item->options, isset($upload_result) && is_array($upload_result) && isset($upload_result['csv_dialect']) ? $upload_result['csv_dialect'] : null),
 					);
 					foreach ($sesson_data as $key => $value) {
 						PMXI_Plugin::$session->set($key, $value);

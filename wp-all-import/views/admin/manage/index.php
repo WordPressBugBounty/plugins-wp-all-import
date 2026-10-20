@@ -145,7 +145,7 @@ $columns = apply_filters('pmxi_manage_imports_columns', $columns);
 									<?php if ('0000-00-00 00:00:00' == $item['first_import']): ?>
 										<em>never</em>
 									<?php else: ?>
-										<?php echo esc_html(get_date_from_gmt($item['first_import'], 'Y/m/d g:i a')); ?>
+										<?php echo esc_html(wp_all_import_local_date('Y/m/d g:i a', $item['first_import'])); ?>
 									<?php endif ?>
 								</td>
 								<?php
@@ -156,7 +156,7 @@ $columns = apply_filters('pmxi_manage_imports_columns', $columns);
 									<?php if ('0000-00-00 00:00:00' == $item['registered_on']): ?>
 										<em>never</em>
 									<?php else: ?>
-										<?php echo esc_html(get_date_from_gmt($item['registered_on'], 'Y/m/d g:i a')); ?>
+										<?php echo esc_html(wp_all_import_local_date('Y/m/d g:i a', $item['registered_on'])); ?>
 									<?php endif ?>
 								</td>
 								<?php
@@ -301,7 +301,7 @@ $columns = apply_filters('pmxi_manage_imports_columns', $columns);
 										printf(
 											/* translators: %s: date and time of import attempt */
 											esc_html__('Import Attempt at %s', 'wp-all-import'),
-											esc_html(get_date_from_gmt($item['canceled_on'], "m/d/Y g:i a"))
+											esc_html(wp_all_import_local_date("m/d/Y g:i a", $item['canceled_on']))
 										); echo '<br/>';
 										esc_html_e('Import canceled', 'wp-all-import');
 									}
@@ -309,7 +309,7 @@ $columns = apply_filters('pmxi_manage_imports_columns', $columns);
 										printf(
 											/* translators: %s: date and time of import attempt */
 											esc_html__('Import Attempt at %s', 'wp-all-import'),
-											esc_html(get_date_from_gmt($item['failed_on'], "m/d/Y g:i a"))
+											esc_html(wp_all_import_local_date("m/d/Y g:i a", $item['failed_on']))
 										); echo '<br/>';
 										esc_html_e('Import failed, please check logs', 'wp-all-import');
 									}
@@ -324,7 +324,7 @@ $columns = apply_filters('pmxi_manage_imports_columns', $columns);
 										printf(
 											/* translators: %s: date and time of last run */
 											esc_html__('Last run: %s', 'wp-all-import'),
-											esc_html(($item['registered_on'] == '0000-00-00 00:00:00') ? __('never', 'wp-all-import') : get_date_from_gmt($item['registered_on'], "m/d/Y g:i a"))
+											esc_html(($item['registered_on'] == '0000-00-00 00:00:00') ? __('never', 'wp-all-import') : wp_all_import_local_date("m/d/Y g:i a", $item['registered_on']))
 										); echo '<br/>';
 										printf(
 											/* translators: 1: number of posts created, 2: post type label */

@@ -38,7 +38,15 @@ class PMXI_CsvParser
 
     $targetDir = '',
 
-    $auto_encoding = true;
+    $auto_encoding = true,
+
+    $import_id = 0,
+
+    $csv_escape_mode = null,
+
+    $csv_escape_detected = null,
+
+    $keep_4byte_chars = false;
 
     protected
 
@@ -78,6 +86,9 @@ class PMXI_CsvParser
     public function __construct( $options = array('filename' => null, 'xpath' => '', 'delimiter' => '', 'encoding' => '', 'xml_path' => '', 'targetDir' => false) ) {
 
         PMXI_Plugin::$csv_path = $options['filename'];
+
+        $this->import_id = isset($options['import_id']) ? $options['import_id'] : self::request_import_id();
+        $this->keep_4byte_chars = ! empty($options['keep_4byte_chars']);
         
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $this->xpath = (!empty($options['xpath']) ? $options['xpath'] : ((!empty($_POST['xpath'])) ? sanitize_text_field(wp_unslash($_POST['xpath'])) : '/node'));
@@ -111,7 +122,13 @@ class PMXI_CsvParser
         
         $file_params = self::analyse_file($options['filename'], 1);
 
-        $this->set_settings(array('delimiter' => $file_params['delimiter']['value'], 'eol' => $file_params['line_ending']['value']));        
+        $settings = array('delimiter' => $file_params['delimiter']['value'], 'eol' => $file_params['line_ending']['value']);
+        if (isset($options['escape'])) {
+            $settings['escape'] = $options['escape'];
+        } elseif (isset($options['csv_escape'])) {
+            $settings['escape'] = $this->resolve_escape($options, $settings['delimiter']);
+        }
+        $this->set_settings($settings);        
 
         unset($file_params);
 
@@ -155,7 +172,54 @@ class PMXI_CsvParser
      */
     public function set_settings($array)
     {
-        $this->settings = apply_filters('wp_all_import_csv_parser_settings', array_merge($this->settings, $array));
+        $this->settings = apply_filters('wp_all_import_csv_parser_settings', array_merge($this->settings, $array), $this->import_id);
+    }
+
+    /**
+     * Automatic decides from the whole file on every run. A backslash import is checked
+     * too, so the run can say when its file looks like standard CSV.
+     */
+    protected function resolve_escape($options, $analysed_delimiter)
+    {
+        $mode = in_array($options['csv_escape'], PMXI_CsvDialect::modes(), true) ? $options['csv_escape'] : PMXI_CsvDialect::BACKSLASH;
+        $this->csv_escape_mode = $mode;
+
+        if (PMXI_CsvDialect::RFC === $mode) {
+            return '';
+        }
+
+        $delimiter = ('' != $this->delimiter) ? $this->delimiter : $analysed_delimiter;
+        // A backslash import always reads with '\\'; detection there only feeds the standard-CSV warning.
+        $detection = PMXI_CsvDialect::detect($options['filename'], $delimiter, $this->settings['length'], PMXI_CsvDialect::BACKSLASH === $mode);
+        $this->csv_escape_detected = $detection['dialect'];
+
+        if (PMXI_CsvDialect::AUTO === $mode) {
+            return PMXI_CsvDialect::BACKSLASH === $detection['dialect'] ? '\\' : '';
+        }
+
+        return '\\';
+    }
+
+    public function csv_dialect()
+    {
+        if (null === $this->csv_escape_mode) {
+            return null;
+        }
+        return array(
+            'mode' => $this->csv_escape_mode,
+            'detected' => $this->csv_escape_detected,
+            'telemetry' => PMXI_CsvDialect::telemetry_value($this->csv_escape_mode, $this->csv_escape_detected),
+        );
+    }
+
+    protected static function request_import_id()
+    {
+        $input = new PMXI_Input();
+        $id = $input->get('id', 0);
+        if ( ! $id) {
+            $id = $input->get('import_id', 0);
+        }
+        return $id;
     }
 
     /**
@@ -1040,7 +1104,7 @@ class PMXI_CsvParser
                                 $value = preg_replace('/\]\]>/s', '', preg_replace('/<!\[CDATA\[/s', '', $value ));
                                 if ($fixBrokenSymbols) {
                                     // Remove non ASCII symbols and write CDATA.
-                                    $xmlWriter->writeCData(preg_replace('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $value));                                                                                              
+                                    $xmlWriter->writeCData(PMXI_ParseOptions::remove_invalid_chars($value, $this->keep_4byte_chars));                                                                                              
                                 }
                                 else {
                                     $xmlWriter->writeCData($value);                                

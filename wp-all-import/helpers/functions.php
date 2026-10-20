@@ -225,7 +225,9 @@ if ( ! function_exists('wp_all_import_get_absolute_path') ) {
 
 if ( ! function_exists('wp_all_import_clear_xss') ) {
     function wp_all_import_clear_xss( $str ) {
-        return stripslashes(esc_sql(htmlspecialchars(wp_strip_all_tags($str))));
+        global $wpdb;
+        // esc_sql turns each "%" into wpdb's placeholder hash, which only a running query strips again.
+        return $wpdb->remove_placeholder_escape(stripslashes(esc_sql(htmlspecialchars(wp_strip_all_tags($str)))));
     }
 }
 
@@ -285,6 +287,9 @@ if ( ! function_exists('wp_all_import_supported_image_types') ) {
         $supported_image_types = array(IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_BMP);
         if (defined('IMAGETYPE_WEBP')) {
             $supported_image_types[] = IMAGETYPE_WEBP;
+        }
+        if (defined('IMAGETYPE_AVIF')) {
+            $supported_image_types[] = IMAGETYPE_AVIF;
         }
         return $supported_image_types;
     }
@@ -591,5 +596,22 @@ if (!function_exists('wp_all_import_get_allowed_zip_extensions')) {
 
         // Apply filter to allow customization
         return apply_filters('wp_all_import_allowed_zip_extensions', $allowed_extensions);
+    }
+}
+
+if ( ! function_exists('wp_all_import_local_date') ) {
+    // For display only: stored values stay GMT and elapsed-time math keeps using time()/gmdate().
+    function wp_all_import_local_date( $format, $date = null ) {
+        // wp_date() needs WordPress 5.3.
+        if ( ! function_exists('wp_date') && ( is_null($date) || is_numeric($date) ) ) {
+            return get_date_from_gmt( gmdate( 'Y-m-d H:i:s', is_null($date) ? time() : (int) $date ), $format );
+        }
+        if ( is_null($date) ) {
+            return wp_date($format);
+        }
+        if ( is_numeric($date) ) {
+            return wp_date($format, (int) $date);
+        }
+        return get_date_from_gmt($date, $format);
     }
 }

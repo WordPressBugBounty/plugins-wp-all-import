@@ -58,7 +58,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <div class="input">
                     <input type="hidden" name="is_send_removed_to_trash" value="0" />
                     <input type="checkbox" id="is_send_removed_to_trash" name="is_send_removed_to_trash" value="1" <?php echo in_array('is_send_removed_to_trash', $disabled_delete_missing_options) ? 'disabled="disabled"' : '';?> <?php echo ($post['wizard_type'] == 'matching') ? 'disabled="disabled"' : '';?> class="switcher"/>
-                    <?php if ( $post_type == 'product' ): ?>
+                    <?php if ( $post_type == 'product' && class_exists('WooCommerce') ): ?>
                         <?php /* translators: see placeholders in the string below */ ?>
                         <label for="is_send_removed_to_trash"><?php printf(esc_html__('Send removed %s to trash', 'wp-all-import'), esc_html($cpt_name)); ?></label>
                         <a href="#help" class="wpallimport-help" title="<?php esc_html_e('Removed parent products will have all of their variations moved to the trash with them. If variations are removed from the import file and their parent product isn\'t, the variations will be disabled but will not be present in the trash. You can edit these disabled product variations in WooCommerce to manually reenable them.', 'wp-all-import') ?>" style="top: -2px;">?</a>
@@ -197,10 +197,10 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 </div>
             </div>
         <?php endif; ?>
-        <?php if ( $post_type == 'product' && $post['wizard_type'] == 'new'): ?>
+        <?php if ( $post_type == 'product' && class_exists('WooCommerce') && $post['wizard_type'] == 'new'): ?>
             <div class="input">
                 <input type="hidden" name="missing_records_stock_status" value="0" />
-                <input type="checkbox" id="missing_records_stock_status" name="missing_records_stock_status" value="1" <?php echo $post['missing_records_stock_status'] ? 'checked="checked"': '' ?> <?php echo ($post['wizard_type'] == 'matching') ? 'disabled="disabled"' : '';?>/>
+                <input type="checkbox" id="missing_records_stock_status" name="missing_records_stock_status" value="1" <?php echo !empty($post['missing_records_stock_status']) ? 'checked="checked"': '' ?> <?php echo ($post['wizard_type'] == 'matching') ? 'disabled="disabled"' : '';?>/>
                 <?php /* translators: see placeholders in the string below */ ?>
                 <label for="missing_records_stock_status"><?php printf(esc_html__('Change stock status of removed %s to', 'wp-all-import'), esc_html($cpt_name)); ?></label>
                 <select name="status_of_removed_products" style="height: 20px; width: 150px; font-size: 12px !important; padding-top: 2px;top:-1px;">

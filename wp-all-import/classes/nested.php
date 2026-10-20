@@ -28,7 +28,7 @@ if ( ! class_exists('PMXI_Nested')){
 					if ( ! empty($nested_fileURL) ){
 						$errors = new WP_Error();
 
-						$uploader = new PMXI_Upload($nested_fileURL, $errors);
+						$uploader = new PMXI_Upload($nested_fileURL, $errors, false, PMXI_ParseOptions::current());
 						$upload_result = $uploader->url();
 						
 						if ($upload_result instanceof WP_Error){

@@ -31,7 +31,8 @@ class PMXI_Chunk {
 		'pointer'   => 1,
 		'chunkSize' => 1024,
 		'filter'    => true,
-		'get_cloud' => false
+		'get_cloud' => false,
+		'keep_4byte_chars' => null,
 	);
 
 	/**
@@ -85,6 +86,10 @@ class PMXI_Chunk {
 			$this->options = array_merge( $this->options, ( is_array( $options ) ? $options : array() ) );
 
 			$this->options['chunkSize'] *= PMXI_Plugin::getInstance()->getOption( 'chunk_size' );
+
+			if ( null === $this->options['keep_4byte_chars'] ) {
+				$this->options['keep_4byte_chars'] = PMXI_ParseOptions::keep_4byte_chars( PMXI_ParseOptions::current() );
+			}
 
 			// set the filename
 			$this->file = $file;
@@ -259,10 +264,12 @@ class PMXI_Chunk {
 		$is_enabled_stream_filter = apply_filters( 'wp_all_import_is_enabled_stream_filter', true );
 		if ( function_exists( 'stream_filter_register' ) and $this->options['filter'] and $is_enabled_stream_filter and $this->parser_type == 'xmlreader' ) {
 			stream_filter_register( 'preprocessxml', 'preprocessXml_filter' );
+			stream_filter_register( 'preprocessxml_keep4byte', 'preprocessXml_keep4byte_filter' );
+			$filter_name = empty( $this->options['keep_4byte_chars'] ) ? 'preprocessxml' : 'preprocessxml_keep4byte';
 			if ( defined( 'HHVM_VERSION' ) ) {
 				$path = $this->file;
 			} else {
-				$path = 'php://filter/read=preprocessxml/resource=' . $this->file;
+				$path = 'php://filter/read=' . $filter_name . '/resource=' . $this->file;
 			}
 		} else {
 			$path = $this->file;
@@ -348,7 +355,7 @@ class PMXI_Chunk {
 				if ( $is_preprocess_enabled ) {
 					// the & symbol is not valid in XML, so replace it with temporary word _ampersand_
 					$xml = str_replace( "&", "_ampersand_", $xml );
-					$xml = preg_replace( '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', str_replace( ":", "_colon_", $xml ) );
+					$xml = PMXI_ParseOptions::remove_invalid_chars( str_replace( ":", "_colon_", $xml ), ! empty( $this->options['keep_4byte_chars'] ) );
 				}
 
 				break;
@@ -406,6 +413,9 @@ class PMXI_Chunk {
 
 // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound
 class preprocessXml_filter extends php_user_filter {
+
+	protected $keep_4byte_chars = false;
+
 	#[\ReturnTypeWillChange]
 	public function filter( $in, $out, &$consumed, $closing ) {
 		while ( $bucket = stream_bucket_make_writeable( $in ) ) {
@@ -414,14 +424,14 @@ class preprocessXml_filter extends php_user_filter {
 			if ( $is_preprocess_enabled ) {
 				// the & symbol is not valid in XML, so replace it with temporary word _ampersand_
 				$bucket->data = str_replace( "&", "_ampersand_", $bucket->data );
-				$cleanXML     = preg_replace( '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $this->replace_colons( $bucket->data ) );
+				$cleanXML     = PMXI_ParseOptions::remove_invalid_chars( $this->replace_colons( $bucket->data ), $this->keep_4byte_chars );
 				if ( $cleanXML == null && preg_last_error() == PREG_BAD_UTF8_ERROR ) {
 					$cleanXML = preg_replace( '/[^\x09\x0a\x0d\x20-\xFF]+/', ' ', $this->replace_colons( $bucket->data ) );
 				}
 				if ( $cleanXML == null && preg_last_error() == PREG_BAD_UTF8_ERROR ) {
 					if ( function_exists( 'mb_ereg_replace' ) ) {
 						mb_regex_encoding( 'UTF-8' );
-						$cleanXML = mb_ereg_replace( '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $this->replace_colons( $bucket->data ) );
+						$cleanXML = mb_ereg_replace( PMXI_ParseOptions::invalid_chars_pattern( $this->keep_4byte_chars ), ' ', $this->replace_colons( $bucket->data ) );
 					}
 				}
 				$bucket->data = empty( $cleanXML ) ? $this->replace_colons( $bucket->data ) : $cleanXML;
@@ -437,4 +447,9 @@ class preprocessXml_filter extends php_user_filter {
 		return str_replace( ":", "_colon_", $data );
 	}
 
+}
+
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound
+class preprocessXml_keep4byte_filter extends preprocessXml_filter {
+	protected $keep_4byte_chars = true;
 }

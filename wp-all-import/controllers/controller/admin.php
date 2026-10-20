@@ -32,15 +32,9 @@ abstract class PMXI_Controller_Admin extends PMXI_Controller {
 
 		$url = $p_url['scheme'] . '://' . $p_url['host'];
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		if (!empty($_POST['is_settings_submitted'])) { // save settings form
-			$input = new PMXI_Input();
-			$post = $input->post(array(
-				'port' => ''
-			));
-			PMXI_Plugin::getInstance()->updateOption($post);
-		}
-		
+		// The port used to be written here, straight from $_POST, before any nonce check had
+		// run and before the settings controller could reject an out-of-range value.
+		// PMXI_Admin_Settings rebuilds its own baseUrl after a successful save instead.
 		$port = PMXI_Plugin::getInstance()->getOption('port');
 
 		if ( ! empty($port) and is_numeric($port) ){

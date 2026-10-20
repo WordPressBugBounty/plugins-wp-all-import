@@ -27,6 +27,9 @@ if (!empty($wpdb->collate)) {
 
 $table_prefix = PMXI_Plugin::getInstance()->getTablePrefix();
 
+$posts_key_length  = wp_all_import_index_prefix_length( $table_prefix . 'posts', 766 );
+$images_key_length = wp_all_import_index_prefix_length( $table_prefix . 'images', 768 );
+
 // phpcs:ignore PluginCheck.CodeAnalysis.Heredoc.NotAllowed,WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 $plugin_queries = <<<SCHEMA
 CREATE TABLE {$table_prefix}templates (
@@ -83,7 +86,9 @@ CREATE TABLE {$table_prefix}posts (
 	product_key TEXT,
 	iteration BIGINT(20) NOT NULL DEFAULT 0,
 	specified BOOL NOT NULL DEFAULT 0,
-	PRIMARY KEY  (id)  		
+	PRIMARY KEY  (id),
+	KEY import_id_unique_key (import_id,unique_key({$posts_key_length})),
+	KEY post_id_import_id (post_id,import_id)
 ) $charset_collate;
 CREATE TABLE {$table_prefix}files (
 	id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -98,7 +103,10 @@ CREATE TABLE {$table_prefix}images (
 	attachment_id BIGINT(20) UNSIGNED NOT NULL,
 	image_url TEXT,
 	image_filename TEXT,	
-	PRIMARY KEY  (id)
+	PRIMARY KEY  (id),
+	KEY attachment_id (attachment_id),
+	KEY image_url (image_url({$images_key_length})),
+	KEY image_filename (image_filename({$images_key_length}))
 ) $charset_collate;
 CREATE TABLE {$table_prefix}history (
 	id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -114,6 +122,7 @@ CREATE TABLE {$table_prefix}hash (
 	post_id BIGINT(20) UNSIGNED NOT NULL,
 	import_id SMALLINT(5) UNSIGNED NOT NULL,
 	post_type VARCHAR(32) NOT NULL DEFAULT '',
-	PRIMARY KEY  (hash)
+	PRIMARY KEY  (hash),
+	KEY post_id_import_id (post_id,import_id)
 ) $charset_collate;
 SCHEMA;

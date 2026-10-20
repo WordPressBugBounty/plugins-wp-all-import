@@ -201,12 +201,22 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 			// it — which then warned, and passed an undefined value to pmxi_get_file.
 			$filePath = '';
 
+			$parse_options = PMXI_ParseOptions::for_new_import();
+			if ( $post['is_update_previous'] and ! empty($post['update_previous']) ) {
+				$existing_parse_options = PMXI_ParseOptions::for_import_id($post['update_previous']);
+				if ( null !== $existing_parse_options ) {
+					$parse_options = $existing_parse_options;
+				}
+			}
+			$upload_details = array();
+
 			if ('upload' == $this->input->post('type')) {
-				$uploader = new PMXI_Upload($post['filepath'], $this->errors, rtrim(str_replace(basename($post['filepath']), '', $post['filepath']), '/'));
+				$uploader = new PMXI_Upload($post['filepath'], $this->errors, rtrim(str_replace(basename($post['filepath']), '', $post['filepath']), '/'), $parse_options);
 				$upload_result = $uploader->upload();
 				if ($upload_result instanceof WP_Error) {
 					$this->errors = $upload_result;
 				} else {
+					$upload_details = $upload_result;
 					$source    = $upload_result['source'];
 					$filePath  = $upload_result['filePath'];
 					$post['template'] = $upload_result['template'];
@@ -218,6 +228,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
                 $post['url'] = trim($post['url']);
 				if ( ! empty($post['downloaded']) ){
 					$downloaded = json_decode($post['downloaded'], true);
+					$upload_details = $downloaded;
 					$source    = $downloaded['source'];
 					$filePath  = $downloaded['filePath'];
 					$post['template'] = $downloaded['template'];
@@ -227,11 +238,12 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 						$post['root_element'] = $downloaded['root_element'];
 					$post['feed_type'] = $downloaded['feed_type'];
 				} else {
-					$uploader = new PMXI_Upload($post['url'], $this->errors);
+					$uploader = new PMXI_Upload($post['url'], $this->errors, false, $parse_options);
 					$upload_result = $uploader->url($post['feed_type']);
 					if ($upload_result instanceof WP_Error) {
 						$this->errors = $upload_result;
 					} else {
+						$upload_details = $upload_result;
 						$source    = $upload_result['source'];
 						$filePath  = $upload_result['filePath'];
 						$post['template'] = $upload_result['template'];
@@ -245,6 +257,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 			} elseif ( 'ftp' == $this->input->post('type')) {
                 if ( ! empty($post['downloaded']) ){
                     $downloaded = json_decode($post['downloaded'], true);
+                    $upload_details = $downloaded;
                     $source    = $downloaded['source'];
 
                     $filePath  = $downloaded['filePath'];
@@ -257,9 +270,10 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
                 } else {
                     try {
                         $files = PMXI_FTPFetcher::fetch($post);
-                        $uploader = new PMXI_Upload($files[0], $this->errors, rtrim(str_replace(basename($files[0]), '', $files[0]), '/'));
+                        $uploader = new PMXI_Upload($files[0], $this->errors, rtrim(str_replace(basename($files[0]), '', $files[0]), '/'), $parse_options);
                         $upload_result = $uploader->upload();
                         if (!$this->errors->get_error_codes()) {
+                            $upload_details = $upload_result;
                             $source    = $upload_result['source'];
                             $filePath  = $upload_result['filePath'];
                             $post['template'] = $upload_result['template'];
@@ -417,7 +431,11 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 					'elements_cloud' => (!empty($elements_cloud)) ? $elements_cloud : array(),
 					'pointer' => 1,
 					'deligate' => $deligate,
-					'first_step' => $post
+					'first_step' => $post,
+					'parse_options' => $parse_options,
+					'file_format' => isset($upload_details['file_format']) ? $upload_details['file_format'] : '',
+					'csv_dialect' => isset($upload_details['csv_dialect']) ? $upload_details['csv_dialect'] : null,
+					'parse_notes' => self::parse_notes($parse_options, isset($upload_details['csv_dialect']) ? $upload_details['csv_dialect'] : null),
 				);
 
 				// apply options from WP All Export bundle
@@ -453,6 +471,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 							$template_options['custom_duplicate_name'] = '_sku';
 						}
 					}
+					$template_options += $parse_options;
 					$this->data['post'] = $template_options;
 					PMXI_Plugin::$session->set('options', $template_options);
 				}
@@ -508,7 +527,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 							'path' => PMXI_Plugin::$session->filePath,
 							'root_element' => $root_element,
 							'xpath' => '/' . $root_element,
-							'options' => array(),
+							'options' => $parse_options,
 							'count' => 0,
 							'registered_on' => gmdate('Y-m-d H:i:s'),
 						))->save();
@@ -652,7 +671,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 
 				wp_all_import_remove_source(PMXI_Plugin::$session->filePath, false);
 
-				$csv = new PMXI_CsvParser( array(
+				$csv = new PMXI_CsvParser( PMXI_ParseOptions::csv_parser_args(PMXI_ParseOptions::current()) + array(
 					'filename' => PMXI_Plugin::$session->get('csv_path'),
 					'xpath' => '',
 					'delimiter' => $post['delimiter'],
@@ -970,7 +989,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 				if (PMXI_Plugin::$session->encoding != $post['import_encoding'] and ! empty(PMXI_Plugin::$session->csv_paths[$key])){
 					// conver CSV to XML with selected encoding
 					include_once(PMXI_Plugin::ROOT_DIR.'/libraries/XmlImportCsvParse.php');
-					$csv = new PMXI_CsvParser(array(
+					$csv = new PMXI_CsvParser(PMXI_ParseOptions::csv_parser_args(PMXI_ParseOptions::current()) + array(
 						'filename' => PMXI_Plugin::$session->csv_paths[$key],
 						'xpath' => '',
 						'delimiter' => PMXI_Plugin::$is_csv,
@@ -1122,7 +1141,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 				if (PMXI_Plugin::$session->encoding != $post['import_encoding'] and ! empty(PMXI_Plugin::$session->csv_paths[$key])){
 					// convert CSV to XML with selected encoding
 					include_once(PMXI_Plugin::ROOT_DIR.'/libraries/XmlImportCsvParse.php');
-					$csv = new PMXI_CsvParser(array(
+					$csv = new PMXI_CsvParser(PMXI_ParseOptions::csv_parser_args(PMXI_ParseOptions::current()) + array(
 						'filename' => PMXI_Plugin::$session->csv_paths[$key],
 						'xpath' => '',
 						'delimiter' => PMXI_Plugin::$is_csv,
@@ -1252,7 +1271,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 				if (PMXI_Plugin::$session->encoding != $post['import_encoding'] and ! empty(PMXI_Plugin::$session->csv_paths[$key])){
 					// conver CSV to XML with selected encoding
 					include_once(PMXI_Plugin::ROOT_DIR.'/libraries/XmlImportCsvParse.php');
-					$csv = new PMXI_CsvParser(array(
+					$csv = new PMXI_CsvParser(PMXI_ParseOptions::csv_parser_args(PMXI_ParseOptions::current()) + array(
 						'filename' => PMXI_Plugin::$session->csv_paths[$key],
 						'xpath' => '',
 						'delimiter' => PMXI_Plugin::$is_csv,
@@ -1401,7 +1420,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 					// conver CSV to XML with selected encoding
 					include_once(PMXI_Plugin::ROOT_DIR.'/libraries/XmlImportCsvParse.php');
 
-					$csv = new PMXI_CsvParser(array(
+					$csv = new PMXI_CsvParser(PMXI_ParseOptions::csv_parser_args(PMXI_ParseOptions::current()) + array(
 						'filename' => PMXI_Plugin::$session->csv_paths[$key],
 						'xpath' => '',
 						'delimiter' => PMXI_Plugin::$is_csv,
@@ -1520,6 +1539,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
             $default['ftp_port'] = PMXI_Plugin::$session->ftp_port;
 
 			$DefaultOptions = (isset(PMXI_Plugin::$session->options)) ? array_replace_recursive($default, PMXI_Plugin::$session->options) : $default;
+			$DefaultOptions = PMXI_ParseOptions::with_wizard_defaults($DefaultOptions, $this->data['update_previous']);
 
 			// Apply WooCommerce product defaults after session merge if values are still empty
 			if ($DefaultOptions['custom_type'] == "product" and class_exists('PMWI_Plugin')) {
@@ -1603,6 +1623,8 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
                 if ($this->isWizard) {
                     $template_options['delimiter'] = PMXI_Plugin::$session->is_csv;
                 }
+
+				$template_options = PMXI_ParseOptions::apply_to_template($post, $template_options);
 
 				$this->data['post'] = $template_options;
 				PMXI_Plugin::$session->set('is_loaded_template', $load_template);
@@ -1904,6 +1926,26 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 		$this->render();
 	}
 
+	public static function parse_notes($parse_options, $csv_dialect) {
+		$notes = PMXI_ParseOptions::log_messages($csv_dialect);
+		if ( PMXI_ParseOptions::keep_requested($parse_options) && ! PMXI_ParseOptions::database_supports_4byte() ) {
+			$notes[] = PMXI_ParseOptions::keep_skipped_message();
+		}
+		return $notes;
+	}
+
+	protected function log_parse_notes($logger) {
+		$notes = PMXI_Plugin::$session->get('parse_notes');
+		if ( empty($notes) || ! is_array($notes) ) {
+			return;
+		}
+		PMXI_Plugin::$session->set('parse_notes', array());
+		PMXI_Plugin::$session->save_data();
+		foreach ($notes as $note) {
+			call_user_func($logger, $note);
+		}
+	}
+
 	protected function _validate_template($text, $field_title) {
 		try {
             if ($text != ''){
@@ -1996,6 +2038,8 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 			if (empty($DefaultOptions['ftp_username'])) $DefaultOptions['ftp_username'] = PMXI_Plugin::$session->ftp_username;
 			if (empty($DefaultOptions['ftp_password'])) $DefaultOptions['ftp_password'] = PMXI_Plugin::$session->ftp_password;
 			if (empty($DefaultOptions['ftp_private_key'])) $DefaultOptions['ftp_private_key'] = PMXI_Plugin::$session->ftp_private_key;
+			$DefaultOptions = PMXI_ParseOptions::with_wizard_defaults($DefaultOptions, $this->data['update_previous']);
+			$DefaultOptions += PMXI_ParseOptions::from_import_options($DefaultOptions);
 
 			$post = $this->input->post( $DefaultOptions );
 
@@ -2017,9 +2061,13 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 
 			PMXI_Plugin::$session->set('source', $source);
 
+			$DefaultOptions += PMXI_ParseOptions::from_import_options($DefaultOptions);
+
 			$post = $this->input->post( $DefaultOptions );
 
 		}
+
+		$post = PMXI_ParseOptions::from_import_options($post) + $post;
 
 		$this->data['post'] =& $post;
 
@@ -2709,7 +2757,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 
 					foreach (PMXI_Plugin::$session->local_paths as $key => $path) {
 
-						$file = new PMXI_Chunk($path, array('element' => $import->root_element, 'encoding' => $import->options['encoding']));
+						$file = new PMXI_Chunk($path, array('element' => $import->root_element, 'encoding' => $import->options['encoding'], 'keep_4byte_chars' => PMXI_ParseOptions::keep_4byte_chars($import->options)));
 					    // Loop through the file until all lines are read.
 					    while ($xml = $file->read()) {
 
@@ -2781,7 +2829,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 		}
 
 		if ($ajax_processing) {
-			$logger = function($m) {echo "<div class='progress-msg'>[". esc_html(gmdate("H:i:s")) ."] ".wp_all_import_filter_html_kses($m)."</div>\n";flush();}; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_all_import_filter_html_kses sanitizes via wp_kses before output.
+			$logger = function($m) {echo "<div class='progress-msg'>[". esc_html(wp_all_import_local_date("H:i:s")) ."] ".wp_all_import_filter_html_kses($m)."</div>\n";flush();}; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_all_import_filter_html_kses sanitizes via wp_kses before output.
 		} else {
             $logger = function($m) {echo "<div class='progress-msg'>".wp_all_import_filter_html_kses($m)."</div>\n"; if ( "" != wp_strip_all_tags(wp_all_import_strip_tags_content(wp_all_import_filter_html_kses($m)))) { PMXI_Plugin::$session->log .= "<p>".wp_strip_all_tags(wp_all_import_strip_tags_content(wp_all_import_filter_html_kses($m)))."</p>"; flush(); }}; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_all_import_filter_html_kses sanitizes via wp_kses before output.
 		}
@@ -2899,7 +2947,8 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 						'element' => $import->root_element,
 						'encoding' => $import->options['encoding'],
 						'pointer' => PMXI_Plugin::$session->pointer,
-						'filter' => true
+						'filter' => true,
+						'keep_4byte_chars' => PMXI_ParseOptions::keep_4byte_chars($import->options),
 					));
 				    // Loop through the file until all lines are read.
 				    while ($xml = $file->read() and empty($import->canceled) ) {
@@ -2920,6 +2969,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 								}
                                 if ( ! $loop and $ajax_processing ) {
                                     ob_start();
+                                    $this->log_parse_notes($logger);
                                 }
                                 $feed .= $xml; $loop += $elements->length;
 								$processed_records = $import->imported + $import->skipped;

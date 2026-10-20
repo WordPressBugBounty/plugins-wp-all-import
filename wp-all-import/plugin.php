@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 Plugin Name: WP All Import
 Plugin URI: https://www.wpallimport.com/wordpress-xml-csv-import/?utm_source=import-plugin-free&utm_medium=wp-plugins-page&utm_campaign=upgrade-to-pro
 Description: The most powerful solution for importing XML and CSV files to WordPress. Create Posts and Pages with content from any XML or CSV file. A paid upgrade to WP All Import Pro is available for support and additional features.
-Version: 4.1.3
+Version: 4.1.4
 Author: Soflyy
 Requires PHP: 7.4
 Text Domain: wp-all-import
@@ -31,7 +31,7 @@ define('WP_ALL_IMPORT_ROOT_URL', rtrim(plugin_dir_url(__FILE__), '/'));
  */
 define('WP_ALL_IMPORT_PREFIX', 'pmxi_');
 
-define('PMXI_VERSION', '4.1.3');
+define('PMXI_VERSION', '4.1.4');
 
 define('PMXI_EDITION', 'free');
 
@@ -848,8 +848,13 @@ final class PMXI_Plugin {
 		if (array_diff_key($option, $this->options)) {
 			throw new Exception(esc_html("Specified option is not defined for the plugin"));
 		}
-		$this->options = $option + $this->options;
-		update_option(get_class($this) . '_Options', $this->options);
+		$name = get_class($this) . '_Options';
+		// Re-read the row rather than trusting the copy loaded at boot, so a save does not revert what another request wrote since.
+		wp_cache_delete($name, 'options');
+		wp_cache_delete('alloptions', 'options');
+		$stored = get_option($name, NULL);
+		$this->options = $option + (is_array($stored) ? $stored + $this->options : $this->options);
+		update_option($name, $this->options);
 
 		return $this->options;
 	}

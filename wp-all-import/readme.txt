@@ -2,7 +2,7 @@
 Contributors: soflyy, wpallimport
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 4.1.3
+Stable tag: 4.1.4
 Requires PHP: 7.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -197,6 +197,23 @@ If you are using the free version of the plugin, you can obtain support through 
 4. Manage imports.
 
 == Changelog ==
+
+= 4.1.4 =
+* security improvement: files inside an uploaded ZIP are always extracted into the import's own folder
+* security improvement: SVG images imported through add-ons are skipped when they cannot be safely cleaned
+* security improvement: updated svg-sanitize to 1.1.1
+* new feature: CSV Format setting with automatic detection of standard (RFC 4180) CSV files
+* improvement: rebuilt settings screen with six tabs
+* improvement: import log timestamps use the site's timezone
+* improvement: imports that update existing records or delete missing records run much faster on sites with large import histories
+* improvement: add-ons that import images can download AVIF images
+* improvement: emoji are kept in new imports
+* bug fix: XLS uploads containing emoji hung until the server timed out
+* bug fix: XLS and XLSX cells with a backslash before a quote merged values and lost rows
+* bug fix: import names containing percent signs caused a critical error
+* bug fix: re-running an import created in WP All Import Pro from an existing file now shows an upgrade message instead of a critical error
+* bug fix: a Customers bundle was not refused when only the free User Import Add-On was active
+* bug fix: a custom product post type showed a blank WooCommerce icon and WooCommerce-only options without WooCommerce
 
 = 4.1.3 =
 * improvement: XLS and XLSX imports no longer use, or break, another plugin's copy of PhpSpreadsheet

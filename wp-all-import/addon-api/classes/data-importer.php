@@ -85,11 +85,11 @@ abstract class PMXI_Addon_Data_Importer {
 	        // Default logger.
 	        if($this->is_cron) {
 		        $logger = function($m) {
-			        print("<p>[". esc_html(gmdate("H:i:s")) ."] ". wp_all_import_filter_html_kses($m) ."</p>\n"); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_all_import_filter_html_kses sanitizes via wp_kses.
+			        print("<p>[". esc_html(wp_all_import_local_date("H:i:s")) ."] ". wp_all_import_filter_html_kses($m) ."</p>\n"); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_all_import_filter_html_kses sanitizes via wp_kses.
 		        };
 	        }else{
 		        $logger = function ( $m ) {
-			        echo "<div class='progress-msg'>[" . esc_html(gmdate( "H:i:s" )) . "] " . wp_all_import_filter_html_kses( $m ) . "</div>\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_all_import_filter_html_kses sanitizes via wp_kses.
+			        echo "<div class='progress-msg'>[" . esc_html(wp_all_import_local_date( "H:i:s" )) . "] " . wp_all_import_filter_html_kses( $m ) . "</div>\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_all_import_filter_html_kses sanitizes via wp_kses.
 			        flush();
 		        };
 	        }

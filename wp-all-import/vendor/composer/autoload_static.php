@@ -12,10 +12,6 @@ class ComposerStaticInit3dbd715dc60b767594b6b7389db08b48
     );
 
     public static $prefixLengthsPsr4 = array (
-        'e' =>
-        array (
-            'enshrined\\svgSanitize\\' => 22,
-        ),
         'S' =>
         array (
             'Symfony\\Polyfill\\Mbstring\\' => 26,
@@ -23,10 +19,6 @@ class ComposerStaticInit3dbd715dc60b767594b6b7389db08b48
     );
 
     public static $prefixDirsPsr4 = array (
-        'enshrined\\svgSanitize\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/enshrined/svg-sanitize/src',
-        ),
         'Symfony\\Polyfill\\Mbstring\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
@@ -618,6 +610,18 @@ class ComposerStaticInit3dbd715dc60b767594b6b7389db08b48
         'Soflyy\\WpAllImport\\Vendor\\ZipStream\\Option\\Version' => __DIR__ . '/../..' . '/vendor-prefixed/maennchen/zipstream-php/src/Option/Version.php',
         'Soflyy\\WpAllImport\\Vendor\\ZipStream\\Stream' => __DIR__ . '/../..' . '/vendor-prefixed/maennchen/zipstream-php/src/Stream.php',
         'Soflyy\\WpAllImport\\Vendor\\ZipStream\\ZipStream' => __DIR__ . '/../..' . '/vendor-prefixed/maennchen/zipstream-php/src/ZipStream.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\ElementReference\\Resolver' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/ElementReference/Resolver.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\ElementReference\\Subject' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/ElementReference/Subject.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\ElementReference\\Usage' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/ElementReference/Usage.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\Exceptions\\NestingException' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/Exceptions/NestingException.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\Exceptions\\RegexException' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/Exceptions/RegexException.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\Helper' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/Helper.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\Sanitizer' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/Sanitizer.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\data\\AllowedAttributes' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/data/AllowedAttributes.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\data\\AllowedTags' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/data/AllowedTags.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\data\\AttributeInterface' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/data/AttributeInterface.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\data\\TagInterface' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/data/TagInterface.php',
+        'Soflyy\\WpAllImport\\Vendor\\enshrined\\svgSanitize\\data\\XPath' => __DIR__ . '/../..' . '/vendor-prefixed/enshrined/svg-sanitize/src/data/XPath.php',
         'Stringable' => __DIR__ . '/../..' . '/vendor-prefixed/myclabs/php-enum/stubs/Stringable.php',
     );
 

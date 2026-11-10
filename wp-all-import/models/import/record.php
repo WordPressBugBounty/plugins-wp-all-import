@@ -130,6 +130,10 @@ class PMXI_Import_Record extends PMXI_Model_Record {
      */
     public function execute($logger = NULL, $cron = true, $history_log_id = false) {
 
+        if ( ! $this->startsFreshRun() && $this->refuseRun($logger) ) {
+            return $this;
+        }
+
         $uploads = wp_upload_dir();
 
         if ($this->path) {
@@ -306,6 +310,10 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                         $this->set(array('count' => $chunks, 'processing' => 0))->update(); // set pointer to the first chunk, updates feed elements count and unlock cron process
 
                         do_action( 'pmxi_before_xml_import', $this->id );
+
+                        if ( $this->refuseRun($logger) ) {
+                            return $this;
+                        }
 
                     }
 
@@ -862,6 +870,11 @@ class PMXI_Import_Record extends PMXI_Model_Record {
         }
 
 		try {
+
+            $refusal = $this->runRefusalMessage();
+            if ( '' !== $refusal ) {
+                throw new XmlImportException($refusal);
+            }
 
             //$errorHandler = new PMXI_Error();
 
@@ -1529,6 +1542,113 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 
 			$chunk == 1 and $logger and call_user_func($logger, __('Processing posts...', 'wp-all-import'));
 
+            // Only the new order add-on uses the copied WooCommerce CRUD path.
+            // Legacy all-in-one imports retain the released free-core post path.
+            $is_woocommerce_order = $this->options['custom_type'] === 'shop_order' && class_exists('PMWOI_Plugin');
+
+            if ($is_woocommerce_order) {
+                // [custom fields]
+                $chunk == 1 and $logger and call_user_func($logger, __('Composing custom parameters...', 'wp-all-import'));
+                $meta_keys = array(); $meta_values = array();
+
+                if ( apply_filters('pmxi_is_custom_fields_import_enabled', true, $this->id, $this->options) and $this->is_parsing_required('is_update_custom_fields') ){
+                    foreach ($this->options['custom_name'] as $j => $custom_name) {
+                        // Skip stub rows — XmlImportParser fails on an empty template.
+                        if (!is_string($custom_name) || trim($custom_name) === '') {
+                            continue;
+                        }
+                        $custom_value = isset($this->options['custom_value'][$j]) ? $this->options['custom_value'][$j] : '';
+                        $meta_keys[$j]   = XmlImportParser::factory($xml, $cxpath, $custom_name, $file)->parse($records); $tmp_files[] = $file;
+                        if (is_serialized($custom_value)){
+                            $meta_values[$j] = array_fill(0, count($titles), $custom_value);
+                        }
+                        else{
+                            if ('' != $custom_value and ! is_serialized($custom_value)){
+                                $meta_values[$j] = XmlImportParser::factory($xml, $cxpath, $custom_value, $file)->parse($records); $tmp_files[] = $file;
+                                // mapping custom fields
+
+                                if ( ! empty($this->options['custom_mapping_rules'][$j])){
+                                    $mapping_rules = (!empty($this->options['custom_mapping_rules'][$j])) ? json_decode($this->options['custom_mapping_rules'][$j], true) : false;
+                                    if ( ! empty($mapping_rules) and is_array($mapping_rules)){
+                                        foreach ($meta_values[$j] as $key => $val) {
+                                            foreach ($mapping_rules as $rule_number => $rule) {
+                                                if ( isset($rule[trim($val)])){
+                                                    $meta_values[$j][$key] = trim($rule[trim($val)]);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else{
+                                $meta_values[$j] = array_fill(0, count($titles), '');
+                            }
+                        }
+                    }
+                }
+
+                // serialized custom post fields
+                $serialized_meta = array();
+
+                if ( ! empty($meta_keys) ){
+
+                    foreach ($meta_keys as $j => $custom_name) {
+
+                        // custom field in serialized format
+                        if (!empty($this->options['custom_format'][$j]))
+                        {
+                            $meta_values[$j] = array_fill(0, count($titles), array());
+
+                            $serialized_values = (!empty($this->options['serialized_values'][$j])) ? json_decode($this->options['serialized_values'][$j], true) : false;
+
+                            if (!empty($serialized_values) and is_array($serialized_values)) {
+
+                                $serialized_meta_keys = array(); $serialized_meta_values = array();
+
+                                foreach ( array_filter($serialized_values) as $key => $value) {
+                                    $k = $key;
+                                    if (is_array($value)){
+                                        $keys = array_keys($value);
+                                        $k = $keys[0];
+                                    }
+                                    if (empty($k) or is_numeric($k)){
+                                        array_push($serialized_meta_keys, array_fill(0, count($titles), $k));
+                                    }
+                                    else{
+                                        array_push($serialized_meta_keys, XmlImportParser::factory($xml, $cxpath, $k, $file)->parse($records)); $tmp_files[] = $file;
+                                    }
+                                    $v = (is_array($value)) ? $value[$k] : $value;
+                                    if ( "" == $v){
+                                        array_push($serialized_meta_values, array_fill(0, count($titles), ""));
+                                    }
+                                    elseif ( is_serialized($v) ){
+                                        array_push($serialized_meta_values, array_fill(0, count($titles), $v));
+                                    }
+                                    else{
+                                        array_push($serialized_meta_values, XmlImportParser::factory($xml, $cxpath, $v, $file)->parse($records)); $tmp_files[] = $file;
+                                    }
+                                }
+
+                                if (!empty($serialized_meta_keys)){
+                                    foreach ($serialized_meta_keys as $skey => $sval) {
+                                        foreach ($sval as $ipost => $ival) {
+                                            $v = (is_serialized($serialized_meta_values[$skey][$ipost])) ? \pmxi_maybe_unserialize($serialized_meta_values[$skey][$ipost]) : $serialized_meta_values[$skey][$ipost];
+                                            ( "" == $ival ) ? array_push($meta_values[$j][$ipost], $v) : $meta_values[$j][$ipost][$ival] = $v;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        $serialized_meta[] = array( 'keys' => $custom_name, 'values' => $meta_values[$j] );
+
+                    }
+                }
+                // [/custom fields]
+
+            }
+
 			$addons = array();
 			$addons_data = array();
 
@@ -1711,6 +1831,16 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 						break;
 
 
+                    case 'shop_order':
+                        if ($is_woocommerce_order) {
+                            $order_data = $addons_data['PMWOI_Plugin']['pmwi_order'] ?? $addons_data['PMWI_Plugin']['pmwi_order'];
+                            $articleData = apply_filters('wp_all_import_combine_article_data', array(
+                                    'date_created' => $order_data['date'][$i],
+                                    'status' => ("xpath" == $this->options['pmwi_order']['status']) ? $order_data['status'][$i] : $this->options['pmwi_order']['status'],
+                                ), $this->options['custom_type'], $this->id, $i);
+                            $logger and call_user_func($logger, __('Combine all data for orders ...', 'wp-all-import'));
+                            break;
+                        }
                     default:
                         $articleData = apply_filters('wp_all_import_combine_article_data', array(
                             'post_type' => $post_type[$i],
@@ -1776,6 +1906,17 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                                         $post_to_update = get_user_by('id', $post_to_update_id = $postRecord->post_id);
                                         break;
 
+                                    case 'shop_order':
+                                        if ($is_woocommerce_order) {
+                                            $post_to_update_id = $postRecord->post_id;
+                                            $post_to_update = wc_get_order($post_to_update_id);
+                                            if (is_wp_error($post_to_update) || !$post_to_update instanceof \WC_Order) {
+                                                $post_to_update = FALSE;
+                                                $post_to_update_id = FALSE;
+                                                $logger and call_user_func($logger, sprintf(__('Duplicate order wasn\'t found for `%s`...', 'wp-all-import'), $this->getRecordTitle($articleData)));
+                                            }
+                                            break;
+                                        }
                                     default:
                                         $post_to_update = get_post($post_to_update_id = $postRecord->post_id);
                                         break;
@@ -1813,7 +1954,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                         $duplicates = array();
 						if ('pid' == $this->options['duplicate_indicator']) {
 							$duplicate_id = $duplicate_indicator_values[$i];
-							if ($duplicate_id && !in_array($this->options['custom_type'], array('import_users', 'shop_customer', 'taxonomies', 'comments', 'woo_reviews', 'gf_entries'))) {
+							if ($duplicate_id && !$is_woocommerce_order && !in_array($this->options['custom_type'], array('import_users', 'shop_customer', 'taxonomies', 'comments', 'woo_reviews', 'gf_entries'))) {
                                 $duplicate_post_type = get_post_type($duplicate_id);
                                 if ($articleData['post_type'] == 'product' && $duplicate_post_type == 'product_variation') {
                                     $duplicate_post_type = 'product';
@@ -1824,7 +1965,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                             }
 						// handle duplicates according to import settings
 						} else {
-							$duplicates = pmxi_findDuplicates($articleData, $custom_duplicate_name[$i], $custom_duplicate_value[$i], $this->options['duplicate_indicator'], $duplicate_indicator_values[$i]);
+							$duplicates = pmxi_findDuplicates($articleData, $custom_duplicate_name[$i], $custom_duplicate_value[$i], $this->options['duplicate_indicator'], $duplicate_indicator_values[$i], $is_woocommerce_order ? 'shop_order' : '');
 							$duplicate_id = ( ! empty($duplicates)) ? array_shift($duplicates) : false;
 						}
 
@@ -1840,6 +1981,17 @@ class PMXI_Import_Record extends PMXI_Model_Record {
                                     $post_to_update = get_user_by('id', $post_to_update_id = $duplicate_id);
                                     break;
 
+                                case 'shop_order':
+                                    if ($is_woocommerce_order) {
+                                        $post_to_update_id = $duplicate_id;
+                                        $post_to_update = wc_get_order($post_to_update_id);
+                                        if (is_wp_error($post_to_update) || !$post_to_update instanceof \WC_Order) {
+                                            $post_to_update = FALSE;
+                                            $post_to_update_id = FALSE;
+                                            $logger and call_user_func($logger, sprintf(__('Duplicate order wasn\'t found for `%s`...', 'wp-all-import'), $this->getRecordTitle($articleData)));
+                                        }
+                                        break;
+                                    }
                                 default:
                                     if (class_exists('WPAI_WPML') && ! empty($this->options['wpml_addon']['lng'])){
                                         // trying to find needed translation for update
@@ -2002,6 +2154,23 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 								break;
 
 
+                            case 'shop_order':
+                                if ($is_woocommerce_order) {
+                                    if ( ! $this->options['is_update_status']) { // preserve status and trashed flag
+                                        $articleData['status'] = $post_to_update->get_status();
+                                        $logger and call_user_func($logger, sprintf(__('Preserve status of already existing order for `%s`', 'wp-all-import'), $this->getRecordTitle($articleData)));
+                                    }
+                                    if ( ! $this->options['is_update_excerpt']){
+                                        $articleData['customer_note'] = $post_to_update->get_customer_note();
+                                        $logger and call_user_func($logger, sprintf(__('Preserve order customer note of already existing order for `%s`', 'wp-all-import'), $this->getRecordTitle($articleData)));
+                                    }
+                                    if ( ! $this->options['is_update_dates']) { // preserve date of already existing article when duplicate is found
+                                        $articleData['date_created'] = $post_to_update->get_date_created();
+                                        $logger and call_user_func($logger, sprintf(__('Preserve date of already existing order for `%s`', 'wp-all-import'), $this->getRecordTitle($articleData)));
+                                    }
+                                    break;
+
+                                }
                             default:
                                 // preserve date of already existing article when duplicate is found
                                 if ( ( ! $this->options['is_update_categories'] and ( is_object_in_taxonomy( $post_type[$i], 'category' ) or is_object_in_taxonomy( $post_type[$i], 'post_tag' ) ) ) or ($this->options['is_update_categories'] and $this->options['update_categories_logic'] != "full_update")) {
@@ -2415,6 +2584,37 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 						}
 						$articleData['post_title'] = $articleData['user_login'];
                         break;
+                    case 'shop_order':
+                        if ($is_woocommerce_order) {
+                            if (empty($articleData['ID'])) {
+                                $logger and call_user_func($logger, sprintf(__('<b>CREATING</b> `%s` `%s`', 'wp-all-import'), $this->getRecordTitle($articleData), $custom_type_details->labels->singular_name));
+                            } else {
+                                $logger and call_user_func($logger, sprintf(__('<b>UPDATING</b> `%s` `%s`', 'wp-all-import'), $this->getRecordTitle($articleData), $custom_type_details->labels->singular_name));
+                                $articleData['order_id'] = $articleData['ID'];
+                            }
+                            // Ensure that no automated order status notes are added unless explicitly allowed.
+                            if( empty( $this->options['pmwi_order']['notes_add_auto_order_status_notes'] )){
+                                $logger and call_user_func($logger, __('<b>Note:</b> blocking automatic order status change notes', 'wp-all-import'));
+                                add_filter('woocommerce_new_order_note_data', [$this, 'woocommerce_new_order_note_data'], 10, 2);
+                                add_action('woocommerce_order_note_added', [$this, 'woocommerce_order_note_added']);
+                            }
+
+                            // Block email notifications during import process.
+                            if (!empty($this->options['do_not_send_order_notifications'])) {
+                                add_filter('woocommerce_email_classes', [$this, 'woocommerce_email_classes'], 99, 1);
+                            }
+
+                            $order = (empty($articleData['ID'])) ? wc_create_order($articleData) : wc_update_order($articleData);
+                            remove_filter('woocommerce_new_order_note_data', [$this, 'woocommerce_new_order_note_data']);
+                            remove_action('woocommerce_order_note_added', [$this, 'woocommerce_order_note_added']);
+                            remove_filter('woocommerce_email_classes', [$this, 'woocommerce_email_classes']);
+                            if ( is_wp_error($order) ) {
+                                $logger and call_user_func($logger, sprintf(__('<b>ERROR</b> %s', 'wp-all-import'), $order->get_error_message()));
+                            } elseif ( ! empty($order) ) {
+                                $pid = $order->get_id();
+                            }
+                            break;
+                        }
                     default:
                         if (empty($articleData['ID'])){
                             /* translators: see placeholders in the string below */
@@ -2510,6 +2710,73 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 						}
 					}
 
+                    if ($is_woocommerce_order) {
+                        // [custom fields]
+
+                        $existing_meta_keys = array();
+                        $existing_meta = array();
+
+                        if (apply_filters('pmxi_is_custom_fields_import_enabled', true, $this->id, $this->options) and (empty($articleData['ID']) or $this->options['update_all_data'] == 'yes' or ($this->options['update_all_data'] == 'no' and $this->options['is_update_custom_fields']) or ($this->options['update_all_data'] == 'no' and !empty($this->options['is_update_attributes']) and $post_type[$i] == "product" and class_exists('PMWI_Plugin')))) {
+
+                            $show_log = ( ! empty($serialized_meta) );
+
+                            $show_log and $logger and call_user_func($logger, __('<b>CUSTOM FIELDS:</b>', 'wp-all-import'));
+
+                            // Delete all meta keys
+                            if ( ! empty($articleData['ID']) ) {
+
+                                $raw_meta_keys = $order->get_meta_data();
+                                // Standardize format of meta data.
+                                foreach($raw_meta_keys as $raw_meta_key){
+                                    $existing_meta_keys[$raw_meta_key->get_data()['key']] = [$raw_meta_key->get_data()['value']];
+                                }
+
+                                $existing_meta = $existing_meta_keys;
+
+                                $exclude_fields = ['_wp_old_slug'];
+                                // Do not delete post meta for features image.
+                                if (!$is_images_to_update || $this->options['is_keep_former_posts'] == 'yes' || $this->options['update_all_data'] == 'no' && (empty($this->options['is_update_images']) || $this->options['update_images_logic'] != 'full_update')) {
+                                    $exclude_fields[] = '_thumbnail_id';
+                                    $exclude_fields[] = '_product_image_gallery';
+                                }
+
+                                // delete keys which are no longer correspond to import settings
+                                foreach ($existing_meta_keys as $cur_meta_key => $cur_meta_val) {
+
+                                    if ( in_array($cur_meta_key, $exclude_fields) ) continue;
+
+
+                                    $field_to_delete = true;
+
+                                    // apply addons filters
+                                    if ( ! apply_filters('pmxi_custom_field_to_delete', $field_to_delete, $pid, $post_type[$i], $this->options, $cur_meta_key) ) continue;
+
+                                    // Update all Custom Fields is defined
+                                    if ($this->options['update_all_data'] == 'yes' or ($this->options['update_all_data'] == 'no' and $this->options['is_update_custom_fields'] and $this->options['update_custom_fields_logic'] == "full_update")) {
+
+                                        $order->delete_meta_data($cur_meta_key);
+                                        $show_log and $logger and call_user_func($logger, sprintf(__('- Custom field %s has been deleted for `%s` attempted to `update all custom fields` setting ...', 'wp-all-import'), $cur_meta_key, $this->getRecordTitle($articleData)));
+                                    }
+                                    // Leave these fields alone, update all other Custom Fields && Update only these Custom Fields, leave the rest alone.
+                                    elseif ($this->options['update_all_data'] == 'no' and $this->options['is_update_custom_fields']) {
+                                        if ( ($this->options['update_custom_fields_logic'] == "all_except" && ( empty($this->options['custom_fields_list']) or ! is_array($this->options['custom_fields_list']) or ! in_array($cur_meta_key, $this->options['custom_fields_list'])))
+                                            || $this->options['update_custom_fields_logic'] == "only" && !empty($this->options['custom_fields_list']) && is_array($this->options['custom_fields_list']) && in_array($cur_meta_key, $this->options['custom_fields_list'])) {
+                                            $order->delete_meta_data($cur_meta_key);
+                                            if ($this->options['update_custom_fields_logic'] == "all_except") {
+                                                $show_log and $logger and call_user_func($logger, sprintf(__('- Custom field %s has been deleted for `%s` attempted to `leave these fields alone: %s, update all other Custom Fields` setting ...', 'wp-all-import'), $cur_meta_key, $this->getRecordTitle($articleData), implode(',', is_array($this->options['custom_fields_list']) ? $this->options['custom_fields_list'] : [])));
+                                            }
+                                            if ($this->options['update_custom_fields_logic'] == "only") {
+                                                $show_log and $logger and call_user_func($logger, sprintf(__('- Custom field %s has been deleted for `%s` attempted to `update only these Custom Fields: %s, leave the rest alone` setting ...', 'wp-all-import'), $cur_meta_key, $this->getRecordTitle($articleData), implode(',', is_array($this->options['custom_fields_list']) ? $this->options['custom_fields_list'] : [])));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        $order->save();
+                    }
+
 					// [addons import]
 
 					// prepare data for import
@@ -2542,6 +2809,158 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 					}
 
 					// [/addons import]
+
+                    if ($is_woocommerce_order) {
+                        $order = wc_get_order($pid);
+                        if (empty($articleData['ID']) or $this->options['update_all_data'] == 'yes' or ($this->options['update_all_data'] == 'no' and $this->options['is_update_custom_fields']) or ($this->options['update_all_data'] == 'no' and !empty($this->options['is_update_attributes']) and $post_type[$i] == "product" and class_exists('PMWI_Plugin'))) {
+
+                            $encoded_meta = array();
+
+                            if ( ! empty($serialized_meta)){
+
+                                $meta_data = array(
+                                    'add'    => array(
+                                        'user' => array(),
+                                        'term' => array(),
+                                        'post' => array(),
+                                        'comment' => array()
+                                    ),
+                                    'update' => array(
+                                        'user' => array(),
+                                        'term' => array(),
+                                        'post' => array(),
+                                        'comment' => array()
+                                    )
+                                );
+
+                                $meta_fields = array();
+                                // get existing keys after add-ons import completed
+                                $meta_type = 'shop_order';
+                                $raw_meta_keys = $order->get_meta_data();
+                                // Standardize format of meta data.
+                                foreach($raw_meta_keys as $raw_meta_key){
+                                    $existing_meta_keys[$raw_meta_key->get_data()['key']] = [$raw_meta_key->get_data()['value']];
+                                }
+
+                                foreach ($serialized_meta as $m_keys) {
+
+                                    $m_key = $m_keys['keys'][$i];
+
+                                    $values = $m_keys['values'];
+
+                                    if (!empty($articleData['ID'])) {
+
+                                        if ($this->options['update_all_data'] != 'yes') {
+
+                                            $field_to_update = false;
+
+                                            if ($this->options['is_update_custom_fields'] and $this->options['update_custom_fields_logic'] == "only" and ! empty($this->options['custom_fields_list']) and is_array($this->options['custom_fields_list']) and in_array($m_key, $this->options['custom_fields_list']) ) $field_to_update = true;
+                                            if ($this->options['is_update_custom_fields'] and $this->options['update_custom_fields_logic'] == "all_except" and ( empty($this->options['custom_fields_list']) or ! is_array($this->options['custom_fields_list']) or ! in_array($m_key, $this->options['custom_fields_list']) )) $field_to_update = true;
+                                            if ( $this->options['update_custom_fields_logic'] == "full_update" ) $field_to_update = true;
+
+                                            // apply addons filters
+                                            $field_to_update = apply_filters('pmxi_custom_field_to_update', $field_to_update, $post_type[$i], $this->options, $m_key);
+
+                                            if ( ! $field_to_update ) {
+                                                $logger and call_user_func($logger, sprintf(__('- Custom field `%s` is not set to be updated in import settings, skipping ...', 'wp-all-import'), $m_key));
+                                                continue;
+                                            }
+                                        }
+                                    }
+
+                                    $logger and call_user_func($logger, __('- <b>ACTION</b>: pmxi_custom_field', 'wp-all-import'));
+                                    $cf_original_value = isset($existing_meta[$m_key][0]) ? $existing_meta[$m_key][0] : '';
+                                    $cf_value = apply_filters('pmxi_custom_field', (is_serialized($values[$i])) ? \pmxi_maybe_unserialize($values[$i]) : $values[$i], $pid, $m_key, $cf_original_value, $existing_meta_keys, $this->id);
+
+                                    $m_key = wp_unslash( $m_key );
+                                    $cf_value = wp_unslash( $cf_value );
+
+                                    // Don't skip any meta updates for orders. When using the WC API for updates it doesn't work well.
+                                    if ( 'shop_order' !== $this->options['custom_type'] && isset( $existing_meta_keys[ $m_key ] ) && ! in_array('total_sales', array($m_key))) {
+                                        if ( isset( $existing_meta_keys[ $m_key ][0] ) && ( $existing_meta_keys[ $m_key ][0] === maybe_serialize( $cf_value ) ) ) {
+                                            $logger and call_user_func($logger, sprintf(__('- Custom field `%s` has been skipped because of duplicate value `%s` for post `%s` ...', 'wp-all-import'), $m_key, esc_attr(maybe_serialize($cf_value)), $this->getRecordTitle($articleData)));
+                                            continue;
+                                        }
+                                        $meta_data['update'][ $meta_type ][ $m_key ] = maybe_serialize( $cf_value );
+                                    } else {
+                                        $meta_data['add'][ $meta_type ][] = $this->wpdb->prepare( "(%d, %s, %s)", $pid, $m_key, maybe_serialize( $cf_value ) );
+                                    }
+
+                                    $meta_fields[ $m_key ] = maybe_serialize( $cf_value );
+
+                                    $logger and call_user_func($logger, sprintf(__('- Custom field `%s` will be updated with value `%s` for post `%s` ...', 'wp-all-import'), $m_key, esc_attr(maybe_serialize($cf_value)), $this->getRecordTitle($articleData)));
+                                    $logger and call_user_func($logger, __('- <b>ACTION</b>: pmxi_update_post_meta', 'wp-all-import'));
+                                }
+
+                                // Skip post if all custom files are unchanged and there is no other data to be updated.
+                                if ( "no" == $this->options['is_keep_former_posts'] ) {
+                                    $is_update_attributes = empty($this->options['is_update_attributes']) ? false : true;
+                                    $data_to_update = array(
+                                        intval( $this->options['is_update_status'] ),
+                                        intval( $this->options['is_update_title'] ),
+                                        intval( $this->options['is_update_author'] ),
+                                        intval( $this->options['is_update_slug'] ),
+                                        intval( $this->options['is_update_content'] ),
+                                        intval( $this->options['is_update_excerpt'] ),
+                                        intval( $this->options['is_update_dates'] ),
+                                        intval( $this->options['is_update_menu_order'] ),
+                                        intval( $this->options['is_update_parent'] ),
+                                        intval( $this->options['is_update_post_type'] ),
+                                        intval( $this->options['is_update_comment_status'] ),
+                                        intval( $this->options['is_update_ping_status'] ),
+                                        intval( $this->options['is_update_attachments'] ),
+                                        intval( $this->options['is_update_images'] ),
+                                        intval( $this->options['is_update_categories'] ),
+                                        intval( $is_update_attributes )
+                                    );
+                                    $data_to_update = array_filter( $data_to_update );
+
+                                    if (
+                                        empty( $data_to_update ) and
+                                        $this->options['is_update_custom_fields'] and
+                                        "only" === $this->options['update_custom_fields_logic'] and
+                                        ! empty( $this->options['custom_fields_list'] ) and
+                                        empty( $meta_data['add'][ $meta_type ] ) and
+                                        empty( $meta_data['update'][ $meta_type ] )
+                                    ) {
+                                        // Skip record only when all fields from 'Update only these ...' list defined in 'Custom Fields' section in import template.
+                                        $skipRecord = true;
+                                        foreach ((is_array($this->options['custom_fields_list']) ? $this->options['custom_fields_list'] : []) as $fieldToUpdate) {
+                                            if (!in_array($fieldToUpdate, $this->options['custom_name'])){
+                                                $skipRecord = false;
+                                                break;
+                                            }
+                                        }
+                                        if ($skipRecord){
+                                            $skipped++;
+                                            $logger and call_user_func( $logger, sprintf( __( '<b>SKIPPED</b>: Custom field data is unchanged, nothing to update for post `%s` ...', 'wp-all-import' ), $this->getRecordTitle($articleData) ) );
+                                            $logger and !$is_cron and PMXI_Plugin::$session->warnings++;
+                                            $logger and !$is_cron and PMXI_Plugin::$session->chunk_number++;
+                                            $logger and !$is_cron and PMXI_Plugin::$session->save_data();
+                                            continue;
+                                        }
+                                    }
+                                }
+
+                                foreach ($meta_fields as $meta_key => $meta_value) {
+                                    $internal_meta_key = ! empty( $meta_key ) && $order->get_data_store() && in_array( $meta_key, $order->get_data_store()->get_internal_meta_keys(), true );
+                                    if (!$internal_meta_key) {
+                                        $meta_value = \pmxi_maybe_unserialize($meta_value);
+                                        $order->update_meta_data($meta_key, $meta_value);
+                                        // Trigger actions for updated meta fields.
+                                        do_action( 'pmxi_update_post_meta', $pid, $meta_key, $meta_value); // hook that was triggered after post meta data updated
+                                    }
+                                }
+                            }
+                        }
+                        // [/custom fields]
+
+                        // Save order object after custom fields import.
+                        if ($is_woocommerce_order) {
+                            $order->save();
+                        }
+
+                    }
 
 					// Page Template
                     global $wp_version;
@@ -3762,6 +4181,7 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 
 					// fire important hooks after custom fields are added
 					$types_to_fire_hooks = array('import_users', 'shop_customer', 'taxonomies', 'comments', 'woo_reviews', 'gf_entries');
+                    if ($is_woocommerce_order) $types_to_fire_hooks[] = 'shop_order';
 					$fire_hooks = apply_filters('pmxi_fire_hooks', in_array($this->options['custom_type'], $types_to_fire_hooks), $this->options['custom_type']);
 
 					if ( ! $this->options['is_fast_mode'] and ! $fire_hooks){
@@ -3888,6 +4308,11 @@ class PMXI_Import_Record extends PMXI_Model_Record {
 			case 'shop_customer':
                 $title = $articleData['user_login'];
                 break;
+            case 'shop_order':
+                if (class_exists('PMWOI_Plugin')) {
+                    $title = $articleData['date_created'] instanceof DateTimeInterface ? $articleData['date_created']->format('Y-m-d H:i:s') : $articleData['date_created'];
+                    break;
+                }
             default:
                 $title = $articleData['post_title'];
                 break;
@@ -4051,7 +4476,54 @@ class PMXI_Import_Record extends PMXI_Model_Record {
         return $missing_ids;
     }
 
+    // Without an order engine the post path would write orders as bare posts.
+    private function ordersRequireOrderEngine() {
+        return 'shop_order' === ($this->options['custom_type'] ?? '') && ! $this->orderEngineIsActive();
+    }
+
+    protected function orderEngineIsActive() {
+        return class_exists('PMWOI_Plugin') || ( defined('PMWI_EDITION') && 'paid' === PMWI_EDITION );
+    }
+
+    /**
+     * @return string Why this import cannot run at all, or '' when it can.
+     */
+    public function runRefusalMessage() {
+        if ( $this->ordersRequireOrderEngine() ) {
+            $message = $this->orderPluginUpdateMessage();
+            return '' !== $message ? $message : __('Importing WooCommerce Orders requires WP All Import - WooCommerce Order Import Add-On. No orders were created, updated or deleted.', 'wp-all-import');
+        }
+        return '';
+    }
+
+    // An installed order plugin that stands aside knows what has to be updated first.
+    protected function orderPluginUpdateMessage() {
+        return function_exists('pmwoi_update_required_message') ? (string) pmwoi_update_required_message() : '';
+    }
+
+    // The add-ons hooked to pmxi_before_xml_import can install the order engine or refuse with their own reason, so a fresh run checks it after them.
+    private function startsFreshRun() {
+        return ! empty($this->path) && empty($this->queue_chunk_number) && empty($this->processing);
+    }
+
+    private function refuseRun($logger) {
+        $refusal = $this->runRefusalMessage();
+        if ( '' === $refusal ) {
+            return false;
+        }
+        $logger and call_user_func($logger, '<b>' . __('ERROR', 'wp-all-import') . '</b>: ' . $refusal);
+        $this->set(array('triggered' => 0, 'processing' => 0, 'executing' => 0, 'queue_chunk_number' => 0))->update();
+        return true;
+    }
+
     protected function get_missing_records($iteration) {
+        if ($this->ordersRequireOrderEngine()) {
+            return [];
+        }
+        // Free core's missing-record actions operate on posts, not WooCommerce orders.
+        if ($this->options['custom_type'] === 'shop_order' && class_exists('PMWOI_Plugin')) {
+            return [];
+        }
         return $missing_ids = $this->get_missing_records_from_imported($iteration);
     }
 
@@ -4676,5 +5148,41 @@ class PMXI_Import_Record extends PMXI_Model_Record {
     {
         return in_array($this->type, array('url', 'ftp', 'file'));
     }
+
+	/**
+	 * Do not add system generated notes during import process.
+	 *
+	 * @param $note_data
+	 * @param $order_data
+	 *
+	 * @return array
+	 */
+	public function woocommerce_new_order_note_data($note_data, $order_data) {
+		return [];
+	}
+
+	// The note-data filter cannot stop the insert, so a suppressed note is removed once it exists.
+	public function woocommerce_order_note_added($note_id) {
+		wp_delete_comment($note_id, TRUE);
+	}
+
+	public function woocommerce_email_classes($emails) {
+		remove_all_actions( 'woocommerce_order_status_cancelled_to_completed_notification');
+		remove_all_actions( 'woocommerce_order_status_cancelled_to_on-hold_notification');
+		remove_all_actions( 'woocommerce_order_status_cancelled_to_processing_notification');
+		remove_all_actions( 'woocommerce_order_status_completed_notification');
+		remove_all_actions( 'woocommerce_order_status_failed_to_completed_notification');
+		remove_all_actions( 'woocommerce_order_status_failed_to_on-hold_notification');
+		remove_all_actions( 'woocommerce_order_status_failed_to_processing_notification');
+		remove_all_actions( 'woocommerce_order_status_on-hold_to_cancelled_notification');
+		remove_all_actions( 'woocommerce_order_status_on-hold_to_failed_notification');
+		remove_all_actions( 'woocommerce_order_status_on-hold_to_processing_notification');
+		remove_all_actions( 'woocommerce_order_status_pending_to_completed_notification');
+		remove_all_actions( 'woocommerce_order_status_pending_to_failed_notification');
+		remove_all_actions( 'woocommerce_order_status_pending_to_on-hold_notification');
+		remove_all_actions( 'woocommerce_order_status_pending_to_processing_notification');
+		remove_all_actions( 'woocommerce_order_status_processing_to_cancelled_notification');
+		return [];
+	}
 
 }

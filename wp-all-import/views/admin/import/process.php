@@ -173,6 +173,18 @@
 		</div>
 	</span>
 
+	<span id="wpallimport-run-refused" style="display:none;">
+		<div class="wpallimport-content-section" style="display:block; position: relative;">
+			<div class="wpallimport-notify-wrapper">
+				<div class="found_records terminated" style="background-position: 0px 50% !important;">
+					<h3 style="max-width: calc(100% - 200px);"><?php esc_html_e('Import stopped, nothing was imported', 'wp-all-import');?></h3>
+					<h4 style="width: 78%; max-width: calc(100% - 200px); line-height: 25px;" class="wpai-run-refused-message"></h4>
+				</div>
+			</div>
+			<a style="position: absolute; top: 35%; right: 10px; display: block; padding-top: 1px;" class="button wpallimport-large-button" href="<?php echo esc_url(add_query_arg(array('page' => 'pmxi-admin-manage'), remove_query_arg(array('id','page'), $this->baseUrl))); ?>"><?php esc_html_e('Manage Imports', 'wp-all-import');?></a>
+		</div>
+	</span>
+
     <div class="wpallimport-display-columns wpallimport-margin-top-forty">
 		<?php echo wp_kses_post( apply_filters('wpallimport_footer', '') ); ?>
     </div>
@@ -326,6 +338,15 @@
 							
 							$('#loglist').append(data.log);
 							$('#process_notice').hide();
+
+							if (data.refusal) {
+								$('.wpallimport-modal-message').html($('#wpallimport-run-refused').html()).show();
+								$('.wpallimport-modal-message').find('.wpai-run-refused-message').text(data.refusal);
+								$('#status').text(<?php echo wp_json_encode(__('stopped', 'wp-all-import'), JSON_HEX_TAG | JSON_HEX_AMP); ?>);
+								write_log();
+								return;
+							}
+
 							$('.processing_step_1').hide();	
 
 							// detect broken auto-created Unique ID and notify user

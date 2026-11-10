@@ -1,6 +1,7 @@
 <?php
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals
 if ( ! defined( 'ABSPATH' ) ) exit;
+if ( $post['custom_type'] === 'shop_order' && class_exists('PMWOI_Plugin') ) return;
     $is_valid_delete_missing = true;
     $error_codes = $this->errors->get_error_codes();
     if ( ! empty($error_codes) and is_array($error_codes) and in_array('delete-missing-validation', $error_codes)) {

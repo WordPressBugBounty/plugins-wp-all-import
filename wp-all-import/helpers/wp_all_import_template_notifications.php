@@ -11,7 +11,12 @@ if ( ! function_exists('wp_all_import_template_notifications') )
 		{
 			foreach ($post['required_add_ons'] as $key => $addon) 
 			{
-				if (class_exists($key)) continue;
+				if (class_exists($key) || ($key == 'PMWI_Plugin' && $post['custom_type'] == 'shop_order' && class_exists('PMWOI_Plugin'))) continue;
+
+				if ($key == 'PMWI_Plugin' && '' !== wp_all_import_missing_woocommerce_companion_message($post['custom_type'])) {
+					$notifications[] = esc_html(wp_all_import_missing_woocommerce_companion_message($post['custom_type']));
+					continue;
+				}
 
 				if ($addon['paid']) {
 					/* translators: 1: add-on name, 2: add-on URL, 3: add-on name */
@@ -38,6 +43,10 @@ if ( ! function_exists('wp_all_import_template_notifications') )
 			}
 
 
+			elseif ( '' !== wp_all_import_missing_woocommerce_companion_message($post['custom_type']) )
+			{
+				$notifications[] = esc_html(wp_all_import_missing_woocommerce_companion_message($post['custom_type']));
+			}
 			elseif ( $post['custom_type'] == 'product' && ! class_exists('PMWI_Plugin') && class_exists( 'Woocommerce' ))
 			{
 				$notifications[] = __('The import template you are using requires the WooCommerce Add-On. If you continue without it your data may import incorrectly.<br/><br/><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-template" target="_blank">Purchase the WooCommerce Add-On</a>.', 'wp-all-import');				

@@ -141,7 +141,9 @@ if ( ! function_exists( 'pmxi_curl_download' ) ) {
 
 		$header = curl_exec( $ch );
 		$finalUrl = curl_getinfo( $ch, CURLINFO_EFFECTIVE_URL );
-		curl_close( $ch );
+		if ( PHP_VERSION_ID < 80000 ) {
+			curl_close( $ch );
+		}
 
 		if ( pmxi_is_private_ip( $finalUrl ) ) {
 			return false;
@@ -151,7 +153,9 @@ if ( ! function_exists( 'pmxi_curl_download' ) ) {
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		$rawdata = curl_exec( $ch );
 		$result  = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
+		if ( PHP_VERSION_ID < 80000 ) {
+			curl_close( $ch );
+		}
 
 		if ( empty( $rawdata ) ) {
 			return false;
@@ -239,7 +243,9 @@ if ( ! function_exists( 'curl_exec_follow' ) ):
 					}
 				} while ( $code && -- $mr );
 
-				curl_close( $rch );
+				if ( PHP_VERSION_ID < 80000 ) {
+					curl_close( $rch );
+				}
 
 				if ( ! $mr ) {
 					if ( $maxredirect !== null ) {

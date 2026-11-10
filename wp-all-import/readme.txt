@@ -2,7 +2,7 @@
 Contributors: soflyy, wpallimport
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 4.1.4
+Stable tag: 4.2.0
 Requires PHP: 7.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -197,6 +197,13 @@ If you are using the free version of the plugin, you can obtain support through 
 4. Manage imports.
 
 == Changelog ==
+
+= 4.2.0 =
+* security improvement: SVG files imported through add-on image and file fields are sanitized, and skipped when they cannot be cleaned
+* security improvement: update PhpSpreadsheet to 1.30.8
+* bug fix: activating WP All Import while WP All Import Pro was deactivated removed the Pro license key
+* bug fix: saved order imports stop with a clear message instead of creating orders as plain posts when no order import add-on is active
+* bug fix: resolve various PHP notices
 
 = 4.1.4 =
 * security improvement: files inside an uploaded ZIP are always extracted into the import's own folder

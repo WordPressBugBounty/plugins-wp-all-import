@@ -2084,21 +2084,23 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 				require_once $functions;
 
 
-            // Block delete missing entirely for existing items (duplicate_matching != 'auto')
-            if ( 'auto' != $post['duplicate_matching'] && ! empty($post['is_delete_missing']) ) {
-                $this->errors->add('delete-missing-validation', __('Selected options are not supported in free edition.', 'wp-all-import'));
-            }
-
-            if ($post['is_delete_missing'] && !empty($post['delete_missing_logic']) && $post['delete_missing_logic'] != 'import') {
-                $this->errors->add('delete-missing-validation', __('Selected options are not supported in free edition.', 'wp-all-import'));
-            }
-
-            if ($post['is_delete_missing'] && !empty($post['delete_missing_action']) && $post['delete_missing_action'] == 'keep') {
-                if (empty($post['is_change_post_status_of_removed']) && empty($post['is_update_missing_cf']) && empty($post['missing_records_stock_status']) && empty($post['is_send_removed_to_trash'])) {
-                    $this->errors->add('delete-missing-validation', __('At least one option must be selected.', 'wp-all-import'));
-                }
-                if (!empty($post['is_send_removed_to_trash'])) {
+            if ($post['custom_type'] !== 'shop_order' || ! class_exists('PMWOI_Plugin')) {
+                // Block delete missing entirely for existing items (duplicate_matching != 'auto')
+                if ( 'auto' != $post['duplicate_matching'] && ! empty($post['is_delete_missing']) ) {
                     $this->errors->add('delete-missing-validation', __('Selected options are not supported in free edition.', 'wp-all-import'));
+                }
+
+                if ($post['is_delete_missing'] && !empty($post['delete_missing_logic']) && $post['delete_missing_logic'] != 'import') {
+                    $this->errors->add('delete-missing-validation', __('Selected options are not supported in free edition.', 'wp-all-import'));
+                }
+
+                if ($post['is_delete_missing'] && !empty($post['delete_missing_action']) && $post['delete_missing_action'] == 'keep') {
+                    if (empty($post['is_change_post_status_of_removed']) && empty($post['is_update_missing_cf']) && empty($post['missing_records_stock_status']) && empty($post['is_send_removed_to_trash'])) {
+                        $this->errors->add('delete-missing-validation', __('At least one option must be selected.', 'wp-all-import'));
+                    }
+                    if (!empty($post['is_send_removed_to_trash'])) {
+                        $this->errors->add('delete-missing-validation', __('Selected options are not supported in free edition.', 'wp-all-import'));
+                    }
                 }
             }
 
@@ -3169,6 +3171,7 @@ class PMXI_Admin_Import extends PMXI_Controller_Admin {
 					'errors' => PMXI_Plugin::$session->errors,
 					'log' => ob_get_clean(),
 					'done' => true,
+					'refusal' => $import->runRefusalMessage(),
 					'records_per_request' => $import->options['records_per_request']
 				));
 

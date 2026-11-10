@@ -5,6 +5,7 @@ namespace Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Cell\AddressRange;
 use Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Reader\DefaultReadFilter;
+use Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 use Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
 use Soflyy\WpAllImport\Vendor\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use SimpleXMLElement;
@@ -142,15 +143,14 @@ class ColumnAndRowAttributes extends BaseParserClass
             /** @scrutinizer ignore-call */
             $column = $columnx->attributes();
             if ($column !== null) {
-                $startColumn = Coordinate::stringFromColumnIndex((int) $column['min']);
-                $endColumn = Coordinate::stringFromColumnIndex((int) $column['max']);
-                ++$endColumn;
-                for ($columnAddress = $startColumn; $columnAddress !== $endColumn; ++$columnAddress) {
+                $minCol = max((int) $column['min'], 1);
+                $maxCol = min((int) $column['max'], AddressRange::MAX_COLUMN_INT);
+                if ($minCol > $maxCol) {
+                    throw new ReaderException('min col > max col');
+                }
+                for ($col = $minCol; $col <= $maxCol; ++$col) {
+                    $columnAddress = Coordinate::stringFromColumnIndex($col);
                     $columnAttributes[$columnAddress] = $this->readColumnRangeAttributes($column, $readDataOnly);
-
-                    if ((int) ($column['max']) == 16384) {
-                        break;
-                    }
                 }
             }
         }

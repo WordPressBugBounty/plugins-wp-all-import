@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 Plugin Name: WP All Import
 Plugin URI: https://www.wpallimport.com/wordpress-xml-csv-import/?utm_source=import-plugin-free&utm_medium=wp-plugins-page&utm_campaign=upgrade-to-pro
 Description: The most powerful solution for importing XML and CSV files to WordPress. Create Posts and Pages with content from any XML or CSV file. A paid upgrade to WP All Import Pro is available for support and additional features.
-Version: 4.1.4
+Version: 4.2.0
 Author: Soflyy
 Requires PHP: 7.4
 Text Domain: wp-all-import
@@ -31,7 +31,7 @@ define('WP_ALL_IMPORT_ROOT_URL', rtrim(plugin_dir_url(__FILE__), '/'));
  */
 define('WP_ALL_IMPORT_PREFIX', 'pmxi_');
 
-define('PMXI_VERSION', '4.1.4');
+define('PMXI_VERSION', '4.2.0');
 
 define('PMXI_EDITION', 'free');
 
@@ -274,7 +274,8 @@ final class PMXI_Plugin {
             $current_options = array();
         }
 
-		$this->options = array_intersect_key($current_options, $options_default) + $options_default;
+		// Keys this edition does not define (WP All Import Pro's licence and scheduling keys share this option) are kept.
+		$this->options = $current_options + $options_default;
 		$this->options = array_intersect_key($options_default, array_flip(array('info_api_url'))) + $this->options; // make sure hidden options apply upon plugin reactivation
 		if ('' == $this->options['cron_job_key']) {
             $this->options['cron_job_key'] = wp_all_import_url_title(wp_all_import_rand_char(12));
@@ -865,7 +866,7 @@ final class PMXI_Plugin {
 	public function activation() {
 		// uncaught exception doesn't prevent plugin from being activated, therefore replace it with fatal error so it does
 		$exception_handler = function($e){
-			trigger_error(esc_html($e->getMessage()), E_USER_ERROR); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error -- Fatal error raised from activation exception handler.
+			throw $e;
 		};
 		set_exception_handler($exception_handler);
 

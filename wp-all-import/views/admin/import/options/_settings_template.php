@@ -211,12 +211,18 @@
 
 
 									<?php if ( class_exists('WooCommerce') && ! class_exists('PMWI_Plugin') ): ?>
+									<?php if ( '' !== wp_all_import_missing_woocommerce_companion_message('product') ): ?>
+										<?php echo wp_all_import_missing_woocommerce_companion_notice('product'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper ?>
+									<?php else: ?>
 										<div class="wpallimport-upgrade-notice" rel="product">
 											<p><?php esc_html_e('The WooCommerce Add-On is Required to Import Products', 'wp-all-import'); ?></p>
 											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-products" target="_blank" class="upgrade_link"><?php esc_html_e('Purchase the WooCommerce Add-On', 'wp-all-import');?></a>
 										</div>
 									<?php endif; ?>
-									<?php if ( class_exists('WooCommerce') &&  ( ! class_exists('PMWI_Plugin') || class_exists('PMWI_Plugin') && PMWI_EDITION == 'free') ): ?>
+									<?php endif; ?>
+									<?php echo wp_all_import_missing_woocommerce_companion_notice('shop_order'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper ?>
+									<?php if ( class_exists('WooCommerce') && ! wp_all_import_is_woocommerce_addon_pro_active() ): ?>
+                                    <?php if ( ! class_exists('PMWOI_Plugin') ): ?>
 										<div class="wpallimport-upgrade-notice" rel="shop_order">
 											<?php if (class_exists('PMWI_Plugin') && PMWI_EDITION == 'free'): ?>
 												<p><?php esc_html_e('The Pro version of the WooCommerce Add-On is required to Import Orders, but you have the free version installed.', 'wp-all-import'); ?></p>
@@ -225,7 +231,8 @@
 											<?php endif; ?>
 											<a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-orders" target="_blank" class="upgrade_link"><?php esc_html_e('Purchase the WooCommerce Add-On', 'wp-all-import');?></a>
 										</div>
-										<div class="wpallimport-upgrade-notice" rel="shop_coupon">
+										<?php endif; ?>
+                                        <div class="wpallimport-upgrade-notice" rel="shop_coupon">
 											<?php if (class_exists('PMWI_Plugin') && PMWI_EDITION == 'free'): ?>
 												<p><?php esc_html_e('The Pro version of the WooCommerce Add-On is required to Import Coupons, but you have the free version installed.', 'wp-all-import'); ?></p>
 											<?php else: ?>

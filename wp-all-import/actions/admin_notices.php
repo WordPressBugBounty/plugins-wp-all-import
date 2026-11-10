@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function pmxi_admin_notices() {	
 
 	// compare woocommerce add-on version	
-	if ( class_exists( 'PMWI_Plugin' ) and ( defined('PMWI_VERSION') and version_compare(PMWI_VERSION, '2.1.4') < 0 and PMWI_EDITION == 'paid' or defined('PMWI_FREE_VERSION') and version_compare(PMWI_FREE_VERSION, '1.2.2') < 0 and PMWI_EDITION == 'free') ) {
+	if ( class_exists( 'PMWI_Plugin' ) and defined('PMWI_EDITION') and ( defined('PMWI_VERSION') and version_compare(PMWI_VERSION, '2.1.4') < 0 and PMWI_EDITION == 'paid' or defined('PMWI_FREE_VERSION') and version_compare(PMWI_FREE_VERSION, '1.2.2') < 0 and PMWI_EDITION == 'free') ) {
 		?>
 		<div class="error"><p>
 			<?php echo wp_kses(
@@ -18,7 +18,7 @@ function pmxi_admin_notices() {
 		</p></div>
 		<?php
 			
-		if (defined('PMWI_EDITION') and PMWI_EDITION == 'paid')
+		if (wp_all_import_is_woocommerce_addon_pro_active())
 		{
 			deactivate_plugins( PMWI_ROOT_DIR . '/wpai-woocommerce-add-on.php');
 		}

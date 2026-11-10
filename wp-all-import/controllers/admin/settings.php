@@ -1141,12 +1141,12 @@ class PMXI_Admin_Settings extends PMXI_Controller_Admin {
 							}
 							else {
 
-								if ( ! defined('PMWI_EDITION') ) {
+								if ( ! wp_all_import_is_woocommerce_addon_pro_active() && ! defined('PMWI_EDITION') ) {
 
 									$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the Pro version of the WooCommerce Add-On.</p><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-bundle" class="upgrade_link" target="_blank">Purchase the WooCommerce Add-On</a>', 'wp-all-import');
 
 								}
-								elseif ( PMWI_EDITION != 'paid' ) {
+								elseif ( ! wp_all_import_is_woocommerce_addon_pro_active() ) {
 
 									$notice = __('<p class="wpallimport-bundle-notice">The import bundle you are using requires the Pro version of the WooCommerce Add-On, but you have the free version installed.</p><a href="https://www.wpallimport.com/checkout/?edd_action=add_to_cart&download_id=5839961&edd_options%5Bprice_id%5D=1&discount=welcome-upgrade-169&utm_source=import-plugin-free&utm_medium=upgrade-notice&utm_campaign=import-wooco-bundle" target="_blank" class="upgrade_link">Purchase the WooCommerce Add-On</a>', 'wp-all-import');
 

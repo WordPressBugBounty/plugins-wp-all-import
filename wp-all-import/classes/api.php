@@ -621,6 +621,14 @@ class PMXI_API
 			}			
 		}
 
+		// The raw fetch fallbacks and the files folder can leave an unsanitized SVG on disk.
+		if ( $result && preg_match( '%\W(svg)$%i', wp_all_import_basename( $image_filepath ) ) && false === wp_all_import_sanitize_svg( $image_filepath ) ) {
+			/* translators: see placeholders in the string below */
+			$logger and call_user_func( $logger, sprintf( __( '- <b>WARNING</b>: SVG file %s could not be sanitized and was skipped', 'wp-all-import' ), $url ) );
+			wp_delete_file( $image_filepath );
+			$result = false;
+		}
+
 		if ( $create_image && $result ) {
 
 			// you must first include the image.php file

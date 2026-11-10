@@ -398,6 +398,7 @@ return array(
     'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLERead' => $baseDir . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLERead.php',
     'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\ChainedBlockStream' => $baseDir . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/ChainedBlockStream.php',
     'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\PPS' => $baseDir . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/PPS.php',
+    'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\PPSTreeNode' => $baseDir . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/PPSTreeNode.php',
     'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\PPS\\File' => $baseDir . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/PPS/File.php',
     'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\PPS\\Root' => $baseDir . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/PPS/Root.php',
     'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\PasswordHasher' => $baseDir . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/PasswordHasher.php',

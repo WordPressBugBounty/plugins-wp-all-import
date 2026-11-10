@@ -4,12 +4,29 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Find duplicates according to settings
  */
-function pmxi_findDuplicates($articleData, $custom_duplicate_name = '', $custom_duplicate_value = '', $duplicate_indicator = 'title', $indicator_value = '') {
+function pmxi_findDuplicates($articleData, $custom_duplicate_name = '', $custom_duplicate_value = '', $duplicate_indicator = 'title', $indicator_value = '', $import_type = '') {
 
     global $wpdb;
 
     if ('custom field' == $duplicate_indicator) {
         $duplicate_ids = [];
+		// Custom wc order handling logic.
+		if ( 'shop_order' === $import_type ) {
+			if ( '' === trim( (string) $custom_duplicate_value ) || '' === trim( (string) $custom_duplicate_name ) ) {
+				return false;
+			}
+			return \wc_get_orders(
+				array(
+					'meta_key'     => $custom_duplicate_name,
+					'meta_value'   => $custom_duplicate_value,
+					'meta_compare' => '==',
+					'orderby'      => array( 'date' => 'DESC', 'ID' => 'ASC' ),
+					'limit'        => 1,
+					'return'       => 'ids',
+				)
+			);
+		}
+
         if (!empty($articleData['post_type'])) {
             switch ($articleData['post_type']) {
                 case 'taxonomies':

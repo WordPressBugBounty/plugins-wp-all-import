@@ -435,7 +435,7 @@ abstract class PMXI_Addon_Base {
         $index = array_column( $fields, 'key' );
         $map   = array_flip( $index );
 
-        return $fields[ $map[ $key ] ?? null ] ?? null;
+        return $fields[ $map[ $key ] ?? '' ] ?? null;
     }
 
     /**

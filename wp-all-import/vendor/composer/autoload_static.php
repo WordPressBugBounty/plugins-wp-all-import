@@ -428,6 +428,7 @@ class ComposerStaticInit3dbd715dc60b767594b6b7389db08b48
         'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLERead' => __DIR__ . '/../..' . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLERead.php',
         'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\ChainedBlockStream' => __DIR__ . '/../..' . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/ChainedBlockStream.php',
         'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\PPS' => __DIR__ . '/../..' . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/PPS.php',
+        'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\PPSTreeNode' => __DIR__ . '/../..' . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/PPSTreeNode.php',
         'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\PPS\\File' => __DIR__ . '/../..' . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/PPS/File.php',
         'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\OLE\\PPS\\Root' => __DIR__ . '/../..' . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/OLE/PPS/Root.php',
         'Soflyy\\WpAllImport\\Vendor\\PhpOffice\\PhpSpreadsheet\\Shared\\PasswordHasher' => __DIR__ . '/../..' . '/vendor-prefixed/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/PasswordHasher.php',

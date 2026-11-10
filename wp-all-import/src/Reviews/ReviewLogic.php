@@ -121,7 +121,7 @@ class ReviewLogic
         }
 
         // Check if the WooCommerce Import Add-On is installed
-        if( defined('PMWI_EDITION') and PMWI_EDITION == "paid" ){
+        if( wp_all_import_is_woocommerce_addon_pro_active() ){
             $proInUse .= 'Installed Pro Plugin: WooCommerce Import Add-On Pro <br/><br/>';
         }
 
